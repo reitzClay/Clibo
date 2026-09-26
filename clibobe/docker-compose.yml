@@ -1,0 +1,41 @@
+services:
+  # The PostgreSQL Database Engine
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: clibo-postgres
+    environment:
+      POSTGRES_USER: clibo_user
+      POSTGRES_PASSWORD: clibo_pass
+      POSTGRES_DB: clibo_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clibo_user -d clibo_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Your Spring Boot Application Service
+  spring-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clibo-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/clibo_db
+      - SPRING_DATASOURCE_USERNAME=clibo_user
+      - SPRING_DATASOURCE_PASSWORD=clibo_pass
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
