@@ -4,6 +4,7 @@ import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 import 'app/service_locator.dart';
 import 'features/companion/presentation/screens/splash_screen.dart';
+import 'interface/clibo_aI_client.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,10 @@ class CliboRobotOverlay extends StatefulWidget {
 class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
   bool isExpanded = false;
   final TextEditingController _messageController = TextEditingController();
+  final List<Map<String, dynamic>> _messages = [
+    {'text': 'How can I help you today?', 'isAi': true},
+  ];
+  bool _isSending = false;
 
   void _toggleExpansion() async {
     setState(() {
@@ -49,6 +54,40 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
       FocusManager.instance.primaryFocus?.unfocus();
     }
   }
+
+  Future<void> _sendMessage(String text) async {
+    if (text.trim().isEmpty || _isSending) return;
+    final prompt = text.trim();
+    _messageController.clear();
+
+    setState(() {
+      _messages.insert(0, {'text': prompt, 'isAi': false});
+      _isSending = true;
+    });
+
+    try {
+      final aiClient = locator<CliboAIClient>();
+      final responseText = await aiClient.generateResponse(prompt);
+      if (mounted) {
+        setState(() {
+          _messages.insert(0, {'text': responseText, 'isAi': true});
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _messages.insert(0, {'text': 'Error connecting to backend: ${e.toString().replaceAll('Exception: ', '')}', 'isAi': true});
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -134,26 +173,52 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
 
         // 2. Chat History
         Expanded(
-          child: ListView(
+          child: ListView.builder(
             padding: const EdgeInsets.all(16),
             reverse: true,
-            children: [
-              // Suggestions / Action Chips
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _buildActionChip("🔍 What's this?"),
-                    _buildActionChip("💡 Fix settings"),
-                    _buildActionChip("📝 Read page"),
+            itemCount: _messages.length + (_isSending ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (_isSending && index == 0) {
+                return Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white10,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    ),
+                  ),
+                );
+              }
+              final msgIndex = _isSending ? index - 1 : index;
+              final msg = _messages[msgIndex];
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (msgIndex == _messages.length - 1) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildActionChip("🔍 What's this?", () => _sendMessage("What's this on my screen?")),
+                          _buildActionChip("💡 Fix settings", () => _sendMessage("How do I fix my settings?")),
+                          _buildActionChip("📝 Read page", () => _sendMessage("Read and summarize this page.")),
+                        ],
+                      ),
+                    ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildChatBubble("How can I help you today?", isAi: true),
-            ],
+                  _buildChatBubble(msg['text'], isAi: msg['isAi']),
+                ],
+              );
+            },
           ),
         ),
 
@@ -170,8 +235,9 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
                   controller: _messageController,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   cursorColor: Colors.white,
+                  onSubmitted: _sendMessage,
                   decoration: InputDecoration(
-                    hintText: "Tap to type...",
+                    hintText: "Ask Clibo AI...",
                     hintStyle: const TextStyle(color: Colors.white38),
                     filled: true,
                     fillColor: Colors.white10,
@@ -184,7 +250,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
                 ),
               ),
               const SizedBox(width: 10),
-              _buildCircularButton(Icons.mic, () {}),
+              _buildCircularButton(Icons.send, () => _sendMessage(_messageController.text)),
             ],
           ),
         ),
@@ -192,11 +258,9 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
     );
   }
 
-  Widget _buildActionChip(String label) {
+  Widget _buildActionChip(String label, VoidCallback onTap) {
     return InkWell(
-      onTap: () {
-        // Handle action
-      },
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
