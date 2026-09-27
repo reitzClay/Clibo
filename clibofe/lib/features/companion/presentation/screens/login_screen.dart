@@ -91,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = ShadTheme.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.black,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 "Clibo AI",
                 style: theme.textTheme.h1.copyWith(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 32,
                 ),
@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 "Create an account",
                 style: TextStyle(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 "Enter your email to sign up or log in",
                 style: TextStyle(
-                  color: Colors.grey,
+                  color: Colors.white60,
                   fontSize: 14,
                 ),
                 textAlign: TextAlign.center,
@@ -137,20 +137,20 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                cursorColor: Colors.black,
-                style: const TextStyle(color: Colors.black),
+                cursorColor: Colors.white,
+                style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: "email@domain.com",
-                  hintStyle: const TextStyle(color: Colors.grey),
+                  hintStyle: const TextStyle(color: Colors.white38),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Colors.white.withOpacity(0.06),
                   enabledBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.black26, width: 1.5),
+                    borderSide: const BorderSide(color: Colors.white24, width: 1.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.black, width: 1.5),
+                    borderSide: const BorderSide(color: Colors.white, width: 1.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -161,41 +161,41 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: _passwordController,
                 obscureText: true,
-                cursorColor: Colors.black,
-                style: const TextStyle(color: Colors.black),
+                cursorColor: Colors.white,
+                style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: "password",
-                  hintStyle: const TextStyle(color: Colors.grey),
+                  hintStyle: const TextStyle(color: Colors.white38),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Colors.white.withOpacity(0.06),
                   enabledBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.black26, width: 1.5),
+                    borderSide: const BorderSide(color: Colors.white24, width: 1.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.black, width: 1.5),
+                    borderSide: const BorderSide(color: Colors.white, width: 1.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
 
-              // 4. Solid Black "Continue" Core Button
+              // 4. Solid White "Continue" Core Button for Dark Theme
               ShadButton(
                 size: ShadButtonSize.lg,
-                backgroundColor: Colors.black,
-                hoverBackgroundColor: Colors.black87,
+                backgroundColor: Colors.white,
+                hoverBackgroundColor: Colors.white70,
                 onPressed: (_isEmailLoading || _isGoogleLoading) ? null : _handleEmailSubmit,
                 child: _isEmailLoading
                     ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
                 )
                     : const Text(
                   "Continue",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 24),
@@ -203,15 +203,15 @@ class _LoginScreenState extends State<LoginScreen> {
               // 5. Stylized Divider
               const Row(
                 children: [
-                  Expanded(child: Divider(color: Colors.black12)),
+                  Expanded(child: Divider(color: Colors.white24)),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
                       "or",
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                      style: TextStyle(color: Colors.white54, fontSize: 14),
                     ),
                   ),
-                  Expanded(child: Divider(color: Colors.black12)),
+                  Expanded(child: Divider(color: Colors.white24)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -220,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
               GoogleSignInButton(
                 onPressed: (_isEmailLoading || _isGoogleLoading) ? null : _handleGoogleSignIn,
                 isLoading: _isGoogleLoading,
-                text: "Continue with Google",
+                text: "Sign in with Google",
               ),
 
               const Spacer(flex: 2),
@@ -228,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // 7. Terms and Legal Visual Footer
               const Text(
                 "By clicking continue, you agree to our Terms of Service\nand Privacy Policy",
-                style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.5),
+                style: TextStyle(color: Colors.white38, fontSize: 12, height: 1.5),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),

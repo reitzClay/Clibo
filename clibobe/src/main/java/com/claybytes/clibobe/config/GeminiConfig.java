@@ -9,7 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class GeminiConfig {
 
     // Inject your secret Gemini Key from application.properties or system environment variables
-    @Value("${gemini.api.key}")
+    @Value("${gemini.api.key:}")
     private String geminiApiKey;
 
     @Bean
