@@ -15,6 +15,8 @@ void main() {
 // overlay entry point
 @pragma("vm:entry-point")
 void overlayMain() {
+  WidgetsFlutterBinding.ensureInitialized();
+  setupServices();
   runApp(
     const MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -318,11 +320,14 @@ class CliboApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Corrected: Initialized standard ShadApp instance configuration wrapper
-    return const ShadApp(
+    // Corrected: Initialized standard ShadApp instance configuration wrapper with global ScaffoldMessenger builder
+    return ShadApp(
       title: 'Clibo AI Companion',
       debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
+      home: const SplashScreen(),
+      builder: (context, child) => ScaffoldMessenger(
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

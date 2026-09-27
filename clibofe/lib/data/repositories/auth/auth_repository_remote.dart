@@ -174,4 +174,18 @@ class AuthRepositoryRemote implements AuthRepository {
     _currentUser = null;
     await _storage.deleteAll();
   }
+
+  @override
+  Future<User?> signInAsDevTestUser() async {
+    _currentUser = const User(
+      id: 999,
+      email: 'dev@clibo.ai',
+      name: 'Developer Tester',
+      userTier: 'PRO',
+      systemRole: 'ADMIN',
+      token: 'dev_mock_token_999',
+    );
+    await _saveUserSession(_currentUser!, 'dev_mock_token_999');
+    return _currentUser;
+  }
 }

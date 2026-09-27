@@ -161,6 +161,20 @@ public class GeminiProxyController {
             return userRepository.findByEmail(token);
         }
 
+        // 3. Dev test token fallback
+        if (token.contains("dev")) {
+            User devUser = userRepository.findByEmail("dev@clibo.ai")
+                    .orElseGet(() -> {
+                        User u = new User();
+                        u.setEmail("dev@clibo.ai");
+                        u.setName("Developer Tester");
+                        u.setUserTier("PRO");
+                        u.setSystemRole("ADMIN");
+                        return userRepository.save(u);
+                    });
+            return Optional.of(devUser);
+        }
+
         try {
             Long id = Long.parseLong(token);
             return userRepository.findById(id);

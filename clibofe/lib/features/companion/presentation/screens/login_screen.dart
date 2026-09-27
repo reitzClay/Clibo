@@ -18,8 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final AuthRepository _authRepository = locator<AuthRepository>();
 
-  bool _isGoogleLoading = false;
   bool _isEmailLoading = false;
+  bool _isDevLoading = false;
 
   @override
   void dispose() {
@@ -37,6 +37,23 @@ class _LoginScreenState extends State<LoginScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  Future<void> _handleDevTestLogin() async {
+    setState(() => _isDevLoading = true);
+
+    try {
+      final user = await _authRepository.signInAsDevTestUser();
+      if (user != null && mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    } catch (e) {
+      _showError("Dev Login failed: ${e.toString().replaceAll('Exception: ', '')}");
+    } finally {
+      if (mounted) setState(() => _isDevLoading = false);
+    }
   }
 
   Future<void> _handleEmailSubmit() async {
@@ -66,23 +83,6 @@ class _LoginScreenState extends State<LoginScreen> {
       _showError("Login failed: ${e.toString().replaceAll('Exception: ', '')}");
     } finally {
       if (mounted) setState(() => _isEmailLoading = false);
-    }
-  }
-
-  Future<void> _handleGoogleSignIn() async {
-    setState(() => _isGoogleLoading = true);
-
-    try {
-      final user = await _authRepository.signInWithGoogle();
-      if (user != null && mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      }
-    } catch (e) {
-      _showError("Google Sign-In failed: ${e.toString().replaceAll('Exception: ', '')}");
-    } finally {
-      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
@@ -186,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 size: ShadButtonSize.lg,
                 backgroundColor: Colors.white,
                 hoverBackgroundColor: Colors.white70,
-                onPressed: (_isEmailLoading || _isGoogleLoading) ? null : _handleEmailSubmit,
+                onPressed: _isEmailLoading ? null : _handleEmailSubmit,
                 child: _isEmailLoading
                     ? const SizedBox(
                   width: 20,
@@ -217,10 +217,38 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 24),
 
               // 6. Google Sign-In Button
-              GoogleSignInButton(
-                onPressed: (_isEmailLoading || _isGoogleLoading) ? null : _handleGoogleSignIn,
-                isLoading: _isGoogleLoading,
-                text: "Sign in with Google",
+              const GoogleSignInButton(),
+              const SizedBox(height: 12),
+
+              // 6.1 Developer Test Login Button (Bypass)
+              OutlinedButton(
+                onPressed: (_isEmailLoading || _isDevLoading) ? null : _handleDevTestLogin,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  side: BorderSide(color: Colors.greenAccent.shade400, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: _isDevLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.greenAccent),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.flash_on, color: Colors.greenAccent, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            "🚀 Dev Test Login (Bypass)",
+                            style: TextStyle(
+                              color: Colors.greenAccent.shade400,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
               ),
 
               const Spacer(flex: 2),

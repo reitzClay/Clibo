@@ -18,4 +18,7 @@ abstract class AuthRepository {
 
   /// Gets currently authenticated user profile
   Future<User?> getCurrentUser();
+
+  /// Instant developer login to bypass network/OAuth during development
+  Future<User?> signInAsDevTestUser();
 }
