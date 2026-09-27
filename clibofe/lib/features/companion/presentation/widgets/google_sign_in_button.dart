@@ -56,13 +56,14 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
     return OutlinedButton(
       style: OutlinedButton.styleFrom(
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        side: const BorderSide(color: Colors.grey, width: 0.5),
+        foregroundColor: const Color(0xFF1F1F1F),
+        side: const BorderSide(color: Color(0xFF747775), width: 1.0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0),
         ),
         minimumSize: const Size.fromHeight(48),
         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        elevation: 0,
       ),
       onPressed: _isLoading ? null : _handleGoogleSignIn,
       child: _isLoading
@@ -71,22 +72,32 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
               width: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1F1F1F)),
               ),
             )
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.network(
-                  'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-                  height: 20.0,
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.login, size: 20),
+                // Clean, robust Google 'G' icon adhering to Google Identity / Material guidelines
+                Container(
+                  width: 20,
+                  height: 20,
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'G',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'Roboto',
+                      color: Color(0xFF4285F4),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12.0),
                 const Text(
                   'Sign in with Google',
                   style: TextStyle(
-                    fontSize: 16.0,
+                    fontSize: 15.0,
                     fontWeight: FontWeight.w500,
                     fontFamily: 'Roboto',
                     color: Color(0xFF1F1F1F),
