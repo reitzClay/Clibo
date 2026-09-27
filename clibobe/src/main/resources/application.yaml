@@ -30,3 +30,7 @@ spring:
             scope:
               - profile
               - email
+
+gemini:
+  api:
+    key: "${GEMINI_API_KEY:}"
