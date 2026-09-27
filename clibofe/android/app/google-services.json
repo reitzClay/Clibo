@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "277710406862",
+    "project_id": "clibo-ai",
+    "storage_bucket": "clibo-ai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:277710406862:android:bef8de1d9b68a24337bc9f",
+        "android_client_info": {
+          "package_name": "com.example.clibofe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDfLq7hbHZQuvd8RTPegBn1K0L2XyKTjXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

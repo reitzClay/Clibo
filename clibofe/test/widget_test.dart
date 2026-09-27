@@ -22,6 +22,16 @@ class MockAuthRepository implements AuthRepository {
 
   @override
   Future<bool> trySilentSignIn() async => false;
+
+  @override
+  Future<User?> signInAsDevTestUser() async => const User(
+        id: 999,
+        email: 'dev@clibo.ai',
+        name: 'Developer Tester',
+        userTier: 'PRO',
+        systemRole: 'ADMIN',
+        token: 'dev_mock_token_999',
+      );
 }
 
 void main() {

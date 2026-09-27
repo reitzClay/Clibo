@@ -15,7 +15,7 @@ public class GeminiConfig {
     @Bean
     public WebClient geminiWebClient(WebClient.Builder builder) {
         return builder
-                .baseUrl("https://googleapis.com")
+                .baseUrl("https://generativelanguage.googleapis.com/v1beta")
                 .defaultHeader("x-goog-api-key", geminiApiKey)
                 .defaultHeader("Content-Type", "application/json")
                 .build();
