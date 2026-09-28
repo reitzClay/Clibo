@@ -11,7 +11,7 @@ class AuthService {
 
   // Base URL for Spring Boot backend
   // In development Android emulator, 10.0.2.2 points to host localhost:8080
-  static const String backendBaseUrl = 'http://10.0.2.2:8080/api/v1';
+  static const String backendBaseUrl = 'http://localhost:8080/api/v1';
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],

@@ -13,6 +13,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -87,27 +88,14 @@ public class GeminiProxyController {
             return Flux.just("data: {\"error\": \"" + limitMsg + "\"}\n\n");
         }
 
-        // Build Gemini payload
-        List<Part> parts = new ArrayList<>();
-        if (request.getImageBase64() != null && !request.getImageBase64().isBlank()) {
-            parts.add(new Part(request.getImageMimeType(), request.getImageBase64()));
-        }
-        if (request.getAudioBase64() != null && !request.getAudioBase64().isBlank()) {
-            parts.add(new Part(request.getAudioMimeType(), request.getAudioBase64()));
-        }
-        if (request.getPrompt() != null && !request.getPrompt().isBlank()) {
-            parts.add(new Part(request.getPrompt()));
-        } else if (parts.isEmpty()) {
-            parts.add(new Part("Hello"));
-        }
-
-        GeminiRequest geminiPayload = new GeminiRequest(
-                List.of(new Content("user", parts))
+        Map<String, Object> geminiPayload = Map.of(
+                "model", "gemini-3.8-flash",
+                "input", request.getPrompt() != null && !request.getPrompt().isBlank() ? request.getPrompt() : "Hello"
         );
 
         final ModalityType usedModality = modality;
         return this.geminiWebClient.post()
-                .uri("/models/gemini-1.5-flash:streamGenerateContent")
+                .uri("/interactions")
                 .bodyValue(geminiPayload)
                 .retrieve()
                 .bodyToFlux(String.class)

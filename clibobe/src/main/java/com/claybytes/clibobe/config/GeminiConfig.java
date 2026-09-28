@@ -8,7 +8,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class GeminiConfig {
 
-    // Inject your secret Gemini Key from application.properties or system environment variables
     @Value("${gemini.api.key:}")
     private String geminiApiKey;
 
@@ -18,6 +17,7 @@ public class GeminiConfig {
                 .baseUrl("https://generativelanguage.googleapis.com/v1beta")
                 .defaultHeader("x-goog-api-key", geminiApiKey)
                 .defaultHeader("Content-Type", "application/json")
+                .defaultHeader("Api-Revision", "2026-05-20")
                 .build();
     }
 }
