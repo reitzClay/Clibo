@@ -88,17 +88,55 @@ public class GeminiProxyController {
             return Flux.just("data: {\"error\": \"" + limitMsg + "\"}\n\n");
         }
 
-        Map<String, Object> geminiPayload = Map.of(
-                "model", "gemini-3.8-flash",
-                "input", request.getPrompt() != null && !request.getPrompt().isBlank() ? request.getPrompt() : "Hello"
+        // Build Gemini payload
+        List<Part> parts = new ArrayList<>();
+        if (request.getImageBase64() != null && !request.getImageBase64().isBlank()) {
+            parts.add(new Part(request.getImageMimeType(), request.getImageBase64()));
+        }
+        if (request.getAudioBase64() != null && !request.getAudioBase64().isBlank()) {
+            parts.add(new Part(request.getAudioMimeType(), request.getAudioBase64()));
+        }
+        if (request.getPrompt() != null && !request.getPrompt().isBlank()) {
+            parts.add(new Part(request.getPrompt()));
+        } else if (parts.isEmpty()) {
+            parts.add(new Part("Hello"));
+        }
+
+        GeminiRequest geminiPayload = new GeminiRequest(
+                List.of(new Content("user", parts))
         );
 
         final ModalityType usedModality = modality;
         return this.geminiWebClient.post()
-                .uri("/interactions")
+                .uri("/models/gemini-1.5-flash:generateContent")
                 .bodyValue(geminiPayload)
                 .retrieve()
-                .bodyToFlux(String.class)
+                .bodyToMono(String.class)
+                .map(responseJson -> {
+                    try {
+                        Map map = gson.fromJson(responseJson, Map.class);
+                        if (map != null && map.containsKey("candidates")) {
+                            List candidates = (List) map.get("candidates");
+                            if (candidates != null && !candidates.isEmpty()) {
+                                Map candidate = (Map) candidates.get(0);
+                                Map content = (Map) candidate.get("content");
+                                if (content != null && content.containsKey("parts")) {
+                                    List partsList = (List) content.get("parts");
+                                    if (partsList != null && !partsList.isEmpty()) {
+                                        Map part = (Map) partsList.get(0);
+                                        if (part != null && part.containsKey("text")) {
+                                            return part.get("text").toString();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        return responseJson;
+                    } catch (Exception e) {
+                        return responseJson;
+                    }
+                })
+                .flux()
                 .doOnComplete(() -> {
                     try {
                         guardrailService.incrementUserUsage(user, usedModality);
@@ -108,7 +146,7 @@ public class GeminiProxyController {
                     }
                 })
                 .onErrorResume(e -> {
-                    logger.error("Gemini stream error: {}", e.getMessage(), e);
+                    logger.error("Gemini error: {}", e.getMessage(), e);
                     return Flux.just("data: {\"error\": \"AI service error: " + e.getMessage() + "\"}\n\n");
                 });
     }

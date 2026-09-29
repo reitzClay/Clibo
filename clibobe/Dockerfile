@@ -8,7 +8,7 @@ WORKDIR /app
 COPY pom.xml .
 
 # Fetch dependencies first (highly cached layer)
-#RUN mvn dependency:go-offline -B || true
+RUN mvn dependency:go-offline -B || true
 
 # Copy the actual application source code
 COPY src ./src
