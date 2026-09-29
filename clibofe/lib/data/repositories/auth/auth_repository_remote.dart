@@ -11,7 +11,10 @@ class AuthRepositoryRemote implements AuthRepository {
   static const String webClientId =
       '277710406862-m9kf0s96pq1t5dabdes4nsbr1hhd2j5g.apps.googleusercontent.com';
 
-  static const String baseUrl = 'http://localhost:8080/api/v1';
+  static const String baseUrl = String.fromEnvironment(
+    'BACKEND_URL',
+    defaultValue: 'http://192.168.0.101:8080/api/v1',
+  );
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
