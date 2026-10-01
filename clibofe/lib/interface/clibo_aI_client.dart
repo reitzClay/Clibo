@@ -83,6 +83,9 @@ class BackendProxyAIClient implements CliboAIClient {
                 if (parsed.containsKey('error')) {
                   throw Exception(parsed['error']);
                 }
+                if (parsed.containsKey('text')) {
+                  result.write(parsed['text']);
+                }
                 if (parsed.containsKey('candidates')) {
                   final candidates = parsed['candidates'] as List;
                   if (candidates.isNotEmpty) {
@@ -96,8 +99,6 @@ class BackendProxyAIClient implements CliboAIClient {
                     }
                   }
                 }
-              } else if (parsed is String) {
-                result.write(parsed);
               }
             } catch (_) {
               result.write(data);

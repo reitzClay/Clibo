@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -35,6 +36,12 @@ public class GeminiProxyController {
 
     @Value("${gemini.api.key:}")
     private String geminiApiKey;
+
+    @Value("${ai.provider:gemini}")
+    private String aiProvider;
+
+    @Value("${ollama.base.url:http://localhost:11434}")
+    private String ollamaBaseUrl;
 
     private final UsageGuardrailService guardrailService;
     private final GoogleAuthService googleAuthService;
@@ -102,10 +109,47 @@ public class GeminiProxyController {
         }
 
         final ModalityType usedModality = modality;
+        if ("ollama".equalsIgnoreCase(aiProvider)) {
+            try {
+                WebClient webClient = WebClient.builder().baseUrl(ollamaBaseUrl).build();
+                Map<String, Object> reqBody = Map.of(
+                    "model", "llama3",
+                    "messages", List.of(Map.of("role", "user", "content", prompt)),
+                    "stream", false
+                );
+
+                String responseJson = webClient.post()
+                        .uri("/api/chat")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(gson.toJson(reqBody))
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block();
+
+                Map respMap = gson.fromJson(responseJson, Map.class);
+                Map msgMap = (Map) respMap.get("message");
+                String output = msgMap != null && msgMap.containsKey("content") 
+                    ? msgMap.get("content").toString() 
+                    : "No output received from Ollama";
+
+                try {
+                    guardrailService.incrementUserUsage(user, usedModality);
+                } catch (Exception e) {
+                    logger.error("Failed to increment usage: {}", e.getMessage());
+                }
+
+                return Flux.just("data: " + gson.toJson(Map.of("text", output)) + "\n\n");
+            } catch (Exception e) {
+                logger.error("Ollama local LLM error: {}", e.getMessage(), e);
+                String errorJson = gson.toJson(Map.of("error", "Local LLM error (Ollama): " + e.getMessage() + ". Make sure Ollama container is running and model (llama3) is pulled."));
+                return Flux.just("data: " + errorJson + "\n\n");
+            }
+        }
+
         try {
             CreateModelInteraction params =
                 CreateModelInteraction.builder()
-                    .model(Model.of("gemini-3.8-flash"))
+                    .model(Model.of("gemini-2.5-flash-lite"))
                     .input(InteractionsInput.of(prompt))
                     .build();
 
@@ -149,11 +193,15 @@ public class GeminiProxyController {
                 logger.error("Failed to increment usage for user {}: {}", user.getEmail(), e.getMessage());
             }
 
-            return Flux.just("data: " + gson.toJson(output) + "\n\n");
+            return Flux.just("data: " + gson.toJson(Map.of("text", output)) + "\n\n");
 
         } catch (Exception e) {
             logger.error("Gemini SDK error: {}", e.getMessage(), e);
-            String errorJson = gson.toJson(Map.of("error", "AI service error: " + e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "";
+            String errorMsg = (msg.contains("429") || msg.contains("RESOURCE_EXHAUSTED"))
+                ? "Rate limit exceeded (429). Please wait a minute and try again."
+                : "AI service error: " + msg;
+            String errorJson = gson.toJson(Map.of("error", errorMsg));
             return Flux.just("data: " + errorJson + "\n\n");
         }
     }

@@ -32,11 +32,24 @@ services:
       - SPRING_DATASOURCE_PASSWORD=clibo_pass
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - GEMINI_API_KEY=AQ.Ab8RN6JCZOQ7-U69Nk7cXw77dlOBPoQNXIud5r6xWPW31q5Hrg
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-AQ.Ab8RN6JCZOQ7-U69Nk7cXw77dlOBPoQNXIud5r6xWPW31q5Hrg}
+      - AI_PROVIDER=${AI_PROVIDER:-gemini}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
     depends_on:
       postgres-db:
         condition: service_healthy
     restart: unless-stopped
 
+  # Local Ollama LLM Container for zero-token development & testing
+  ollama:
+    image: ollama/ollama:latest
+    container_name: clibo-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  ollama_data:
