@@ -96,6 +96,8 @@ class BackendProxyAIClient implements CliboAIClient {
                     }
                   }
                 }
+              } else if (parsed is String) {
+                result.write(parsed);
               }
             } catch (_) {
               result.write(data);
