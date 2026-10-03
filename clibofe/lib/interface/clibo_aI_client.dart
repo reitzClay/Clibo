@@ -87,43 +87,88 @@ class BackendProxyAIClient implements CliboAIClient {
       final rawBody = buffer.toString();
       final StringBuffer result = StringBuffer();
       for (final line in rawBody.split('\n')) {
-        if (line.startsWith('data:')) {
-          final data = line.substring(5).trim();
-          if (data.isNotEmpty) {
-            try {
-              final parsed = jsonDecode(data);
-              if (parsed is Map) {
-                if (parsed.containsKey('error')) {
-                  throw Exception(parsed['error']);
-                }
-                if (parsed.containsKey('text')) {
-                  result.write(parsed['text']);
-                }
-                if (parsed.containsKey('candidates')) {
-                  final candidates = parsed['candidates'] as List;
-                  if (candidates.isNotEmpty) {
-                    final content = candidates[0]['content'];
-                    if (content != null && content['parts'] != null) {
-                      for (final part in content['parts']) {
-                        if (part['text'] != null) {
-                          result.write(part['text']);
-                        }
+        String cleanLine = line.trim();
+        if (cleanLine.startsWith('data:')) {
+          cleanLine = cleanLine.substring(5).trim();
+        }
+        if (cleanLine.isNotEmpty && !cleanLine.startsWith(':')) {
+          try {
+            final parsed = jsonDecode(cleanLine);
+            if (parsed is Map) {
+              if (parsed.containsKey('error')) {
+                throw Exception(parsed['error']);
+              }
+              if (parsed.containsKey('text')) {
+                result.write(parsed['text']);
+              } else if (parsed.containsKey('response')) {
+                result.write(parsed['response']);
+              }
+              if (parsed.containsKey('candidates')) {
+                final candidates = parsed['candidates'] as List;
+                if (candidates.isNotEmpty) {
+                  final content = candidates[0]['content'];
+                  if (content != null && content['parts'] != null) {
+                    for (final part in content['parts']) {
+                      if (part['text'] != null) {
+                        result.write(part['text']);
                       }
                     }
                   }
                 }
               }
-            } catch (_) {
-              result.write(data);
+            }
+          } catch (_) {
+            if (cleanLine.startsWith('{') && cleanLine.contains('"text":')) {
+              final match = RegExp(r'"text"\s*:\s*"((?:[^"\\]|\\.)*)"').firstMatch(cleanLine);
+              if (match != null && match.group(1) != null) {
+                result.write(match.group(1)!.replaceAll(r'\"', '"').replaceAll(r'\u0027', "'"));
+              } else {
+                result.write(cleanLine);
+              }
+            } else {
+              result.write(cleanLine);
             }
           }
-        } else if (line.trim().isNotEmpty && !line.startsWith(':')) {
-          result.write(line);
         }
       }
 
-      final finalOutput = result.toString().trim();
-      return finalOutput.isNotEmpty ? finalOutput : rawBody.trim();
+      String finalOutput = result.toString().trim();
+      if (finalOutput.isEmpty) {
+        try {
+          String bodyToParse = rawBody.trim();
+          if (bodyToParse.startsWith('data:')) {
+            bodyToParse = bodyToParse.substring(5).trim();
+          }
+          final parsed = jsonDecode(bodyToParse);
+          if (parsed is Map && parsed.containsKey('text')) {
+            finalOutput = parsed['text'].toString();
+          }
+        } catch (_) {
+          finalOutput = rawBody.trim();
+        }
+      }
+
+      // Unescape and clean up formatting
+      finalOutput = finalOutput
+          .replaceAll(r'\n', '\n')
+          .replaceAll(r'\"', '"')
+          .replaceAll(r'\u0027', "'")
+          .replaceAll(r'\\', '\\');
+
+      if (finalOutput.startsWith('{"text":')) {
+        try {
+          final decoded = jsonDecode(finalOutput);
+          if (decoded is Map && decoded.containsKey('text')) {
+            finalOutput = decoded['text'].toString();
+          }
+        } catch (_) {}
+      }
+
+      if (finalOutput.endsWith('}') && !finalOutput.contains('{')) {
+        finalOutput = finalOutput.substring(0, finalOutput.length - 1).trim();
+      }
+
+      return finalOutput;
     } finally {
       client.close();
     }

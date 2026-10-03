@@ -23,7 +23,7 @@ import java.util.Map;
 @Service
 public class GeminiAiService implements AiProviderService {
 
-    private static final Logger logger = LoggerFactory.getLogger(GeminiAiService.java);
+    private static final Logger logger = LoggerFactory.getLogger(GeminiAiService.class);
 
     private final String geminiApiKey = System.getenv().getOrDefault("GEMINI_API_KEY", "");
 
