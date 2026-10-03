@@ -1,0 +1,7 @@
+- [/] Refactor Backend AI Provider Architecture (Strategy Pattern)
+  - [ ] Create `AiProviderService` interface
+  - [ ] Create `OllamaAiService` implementation
+  - [ ] Create `GeminiAiService` implementation
+  - [ ] Create `AiProxyController` and wire provider registry
+  - [ ] Remove legacy `GeminiProxyController`
+  - [ ] Verify build and container deployment

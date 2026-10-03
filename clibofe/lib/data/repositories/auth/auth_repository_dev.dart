@@ -50,4 +50,18 @@ class AuthRepositoryDev implements AuthRepository {
   Future<void> signOut() async {
     _mockUser = null;
   }
+
+  @override
+  Future<User?> signInAsDevTestUser() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    _mockUser = const User(
+      id: 999,
+      email: 'dev@clibo.ai',
+      name: 'Developer Tester',
+      userTier: 'PRO',
+      systemRole: 'ADMIN',
+      token: 'dev_mock_token_999',
+    );
+    return _mockUser;
+  }
 }

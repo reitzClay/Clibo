@@ -13,7 +13,7 @@ class AuthService {
   // In development Android emulator, 10.0.2.2 points to host localhost:8080
   static const String backendBaseUrl = String.fromEnvironment(
     'BACKEND_URL',
-    defaultValue: 'http://192.168.0.101:8080/api/v1',
+    defaultValue: 'http://192.168.0.103:8080/api/v1',
   );
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
