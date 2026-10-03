@@ -1,45 +1,38 @@
-# Backend AI Provider Refactoring Plan (Strategy Pattern)
+# Implementation Plan - Google Sign-In Fix & Organization Registration Flow
 
-Refactor `GeminiProxyController` into a clean, extensible Strategy Pattern architecture for AI providers (`ollama`, `gemini`, `openai`, `claude`, `custom`), separating concerns and eliminating tight coupling.
+This plan outlines the steps to fix Google Sign-In on physical Android devices and implement a multi-tenant Organization Registration and Sign-Up flow on both the Spring Boot backend (`clibobe`) and Flutter frontend (`clibofe`).
 
 ## User Review Required
 
 > [!IMPORTANT]
-> This refactoring introduces an `AiProviderService` interface and dedicated implementations (`OllamaAiService`, `GeminiAiService`, etc.), routed dynamically through an `AiProxyController`. All existing API endpoints (`/api/v1/ai/chat`, `/api/v1/ai/health`, `/api/v1/ai/usage`) will maintain full backward compatibility.
+> **Google Sign-In SHA-1 Requirement**: For Google Sign-In to work on physical Android devices, your PC's debug keystore SHA-1 fingerprint must be registered in your Firebase Console project settings.
+
+## Open Questions
+- Should organization registration be tied directly to Google Sign-In domain matching (e.g., auto-joining based on `@company.com`), or a dedicated sign-up screen? (We propose a dedicated Organization Sign-Up form during onboarding).
 
 ## Proposed Changes
 
 ### Backend (`clibobe`)
 
-#### [NEW] `[AiProviderService.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/service/ai/AiProviderService.java)`
-- Defines the common contract for all AI providers:
-  ```java
-  public interface AiProviderService {
-      Flux<String> generateStream(User user, AiPromptRequest request, String prompt);
-      String getProviderId();
-  }
-  ```
+#### [MODIFY] [OrganizationRepository.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/repository/OrganizationRepository.java)
+- Add data access methods for finding and saving organizations.
 
-#### [NEW] `[OllamaAiService.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/service/ai/OllamaAiService.java)`
-- Dedicated service for Ollama communication (`/api/chat`), handling non-blocking WebClient requests and usage guardrails.
+#### [NEW] [OrganizationController.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/controller/OrganizationController.java)
+- Create endpoints for registering new organizations (`POST /api/v1/organizations/register`) and fetching organization details.
 
-#### [NEW] `[GeminiAiService.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/service/ai/GeminiAiService.java)`
-- Dedicated service for Google Gemini / GenAI SDK interactions.
+### Frontend (`clibofe`)
 
-#### [NEW] `[AiProxyController.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/controller/AiProxyController.java)`
-- Replaces `GeminiProxyController`.
-- Autowires `Map<String, AiProviderService>` (or registry) to dispatch chat requests to the appropriate provider service dynamically based on `aiProvider`.
-- Exposes `/health` and `/usage` endpoints.
+#### [MODIFY] [auth_repository_remote.dart](file:///C:/Users/Clayt/Documents/Development/Clibo/clibofe/lib/data/repositories/auth/auth_repository_remote.dart)
+- Enhance Google Sign-In error handling and logging to diagnose platform sign-in exceptions (e.g., SHA-1 / configuration issues).
+- Add organization registration method `registerOrganization(...)`.
 
-#### [DELETE] `[GeminiProxyController.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/controller/GeminiProxyController.java)`
-- Replaced by `AiProxyController` and provider services.
+#### [NEW] [register_organization_screen.dart](file:///C:/Users/Clayt/Documents/Development/Clibo/clibofe/lib/features/companion/presentation/screens/register_organization_screen.dart)
+- Build a company account sign-up screen where admins can input organization name, domain, and plan tier.
 
 ## Verification Plan
 
 ### Automated Tests
-- Build verification via Maven (`./mvnw clean compile`).
-- Container build and startup check via Docker Compose.
-
+- Backend unit tests for organization registration and Google auth endpoints.
 ### Manual Verification
-- Test connection in the Clibo app Config tab (`/api/v1/ai/health`).
-- Send a chat message with Ollama selected to verify successful response stream from `clibo-ollama`.
+- Deploy backend and test Google Sign-In on physical USB-connected device.
+- Test organization registration flow from the Flutter app.

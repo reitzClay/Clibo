@@ -5,6 +5,7 @@ import '../../../../app/service_locator.dart';
 import '../../../../data/repositories/auth/auth_repository.dart';
 import '../widgets/google_sign_in_button.dart';
 import 'home_screen.dart';
+import 'register_organization_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -115,6 +116,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const RegisterOrganizationScreen()),
+                  );
+                },
+                child: const Text(
+                  "Register Company / Organization",
+                  style: TextStyle(color: Colors.blueAccent, fontSize: 14, fontWeight: FontWeight.w500),
+                ),
               ),
 
               const Spacer(flex: 2),

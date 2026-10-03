@@ -121,3 +121,19 @@ flutter run
 - **AI Providers**: Configurable via the frontend UI (`config_tab.dart`) and backend proxy (`GeminiProxyController.java`), allowing seamless switching between Google Gemini cloud models and local Ollama instances.
 - **Authentication**: Firebase Auth paired with Google Sign-In on the client side, verified securely via `firebase-admin` on the Spring Boot backend.
 - **State & DI**: Clean separation of concerns with GetIt service locator in Flutter and Spring Dependency Injection on the backend.
+
+---
+
+## 6. Troubleshooting & Common Issues
+
+### PostgreSQL Database Schema Missing (`ERROR: schema "public" does not exist`)
+If you encounter database errors during startup indicating that the `public` schema or relations like `public.users` do not exist (often occurring when restarting Docker compose with a stale or uninitialized persistent volume):
+1. Stop the containers and prune the persistent volume:
+   ```bash
+   docker compose down -v
+   ```
+2. Rebuild and restart the stack:
+   ```bash
+   docker compose up --build
+   ```
+   This ensures PostgreSQL re-initializes cleanly with the default `public` schema and Hibernate DDL auto-creates the required tables.

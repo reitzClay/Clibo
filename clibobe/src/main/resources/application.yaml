@@ -4,7 +4,7 @@ spring:
 
   # Database Connection Details
   datasource:
-    url: jdbc:postgresql://localhost:5432/clibo_db
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/clibo_db?currentSchema=public}"
     username: clibo_user
     password: clibo_pass
     driver-class-name: org.postgresql.Driver
@@ -17,6 +17,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        default_schema: public
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   # OAuth2 Security Configuration
@@ -25,7 +26,7 @@ spring:
       client:
         registration:
           google:
-            client-id: "${GOOGLE_CLIENT_ID:277710406862-m9kf0s96pq1t5dabdes4nsbr1hhd2j5g.apps.googleusercontent.com}"
+            client-id: "${GOOGLE_CLIENT_ID:277710406862-k1h0jcnngg5k64q5semb3pqvs295qe9v.apps.googleusercontent.com}"
             client-secret: "${GOOGLE_CLIENT_SECRET:}" # Load securely via environment variable
             scope:
               - profile

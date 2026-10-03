@@ -9,7 +9,7 @@ import 'auth_repository.dart';
 
 class AuthRepositoryRemote implements AuthRepository {
   static const String webClientId =
-      '277710406862-m9kf0s96pq1t5dabdes4nsbr1hhd2j5g.apps.googleusercontent.com';
+      '277710406862-k1h0jcnngg5k64q5semb3pqvs295qe9v.apps.googleusercontent.com';
 
   static const String baseUrl = String.fromEnvironment(
     'BACKEND_URL',
@@ -124,6 +124,39 @@ class AuthRepositoryRemote implements AuthRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> registerOrganization({
+    required String name,
+    required String domain,
+    required String planTier,
+    required String adminEmail,
+    required String adminName,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/organizations/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'name': name.trim(),
+          'domain': domain.trim(),
+          'planTier': planTier,
+          'adminEmail': adminEmail.trim(),
+          'adminName': adminName.trim(),
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['error'] ?? 'Organization registration failed (${response.statusCode})');
+      }
+    } catch (e) {
+      debugPrint("Organization Registration Error: $e");
+      rethrow;
+    }
+  }
+
+  @override
   Future<User?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
@@ -135,14 +168,14 @@ class AuthRepositoryRemote implements AuthRepository {
       final String? idToken = auth.idToken;
 
       if (idToken == null || idToken.isEmpty) {
-        throw Exception("Failed to obtain Google ID token");
+        throw Exception("Failed to obtain Google ID token. Please verify SHA-1 configuration in Firebase.");
       }
 
       _currentUser = await _verifyGoogleTokenWithBackend(idToken);
       return _currentUser;
     } catch (e) {
       debugPrint("Google Sign-In Error: $e");
-      rethrow;
+      throw Exception("Google Sign-In failed: ${e.toString().replaceAll('Exception: ', '')}");
     }
   }
 
