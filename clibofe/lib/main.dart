@@ -42,6 +42,7 @@ class CliboRobotOverlay extends StatefulWidget {
 
 class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
   bool isExpanded = false;
+  bool isMaximized = false;
   final TextEditingController _messageController = TextEditingController();
   final List<Map<String, dynamic>> _messages = [
     {'text': 'How can I help you today?', 'isAi': true},
@@ -51,6 +52,9 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
   void _toggleExpansion() async {
     setState(() {
       isExpanded = !isExpanded;
+      if (!isExpanded) {
+        isMaximized = false;
+      }
     });
 
     if (isExpanded) {
@@ -62,6 +66,18 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
       await FlutterOverlayWindow.resizeOverlay(120, 120, true);
       await FlutterOverlayWindow.updateFlag(OverlayFlag.defaultFlag);
       FocusManager.instance.primaryFocus?.unfocus();
+    }
+  }
+
+  void _toggleMaximize() async {
+    setState(() {
+      isMaximized = !isMaximized;
+    });
+
+    if (isMaximized) {
+      await FlutterOverlayWindow.resizeOverlay(420, 720, true);
+    } else {
+      await FlutterOverlayWindow.resizeOverlay(350, 500, true);
     }
   }
 
@@ -112,8 +128,8 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            width: isExpanded ? 300 : 70,
-            height: isExpanded ? 450 : 70,
+            width: isExpanded ? (isMaximized ? 400 : 300) : 70,
+            height: isExpanded ? (isMaximized ? 680 : 450) : 70,
             decoration: BoxDecoration(
               color: Colors.black,
               borderRadius: BorderRadius.circular(isExpanded ? 24 : 35),
@@ -171,11 +187,22 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
                   ),
                 ],
               ),
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: const Icon(Icons.close, color: Colors.white70, size: 20),
-                onPressed: _toggleExpansion,
+              Row(
+                children: [
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: Icon(isMaximized ? Icons.fullscreen_exit : Icons.fullscreen, color: Colors.white70, size: 20),
+                    onPressed: _toggleMaximize,
+                  ),
+                  const SizedBox(width: 14),
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                    onPressed: _toggleExpansion,
+                  ),
+                ],
               ),
             ],
           ),
@@ -305,7 +332,10 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: const BoxConstraints(maxWidth: 260, maxHeight: 250),
+        constraints: BoxConstraints(
+          maxWidth: isMaximized ? 350 : 260,
+          maxHeight: isMaximized ? 500 : 250,
+        ),
         decoration: BoxDecoration(
           color: isAi ? Colors.white10 : Colors.blueGrey.shade900,
           borderRadius: BorderRadius.only(
