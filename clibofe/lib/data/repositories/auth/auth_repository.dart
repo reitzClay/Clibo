@@ -7,6 +7,15 @@ abstract class AuthRepository {
   /// Registers a new user with Email and Password
   Future<User?> signUpWithEmail(String email, String password);
 
+  /// Registers a new organization with company details and admin user
+  Future<Map<String, dynamic>> registerOrganization({
+    required String name,
+    required String domain,
+    required String planTier,
+    required String adminEmail,
+    required String adminName,
+  });
+
   /// Signs in using Google ID Token flow
   Future<User?> signInWithGoogle();
 

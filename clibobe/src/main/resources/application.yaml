@@ -25,7 +25,7 @@ spring:
       client:
         registration:
           google:
-            client-id: "${GOOGLE_CLIENT_ID:277710406862-m9kf0s96pq1t5dabdes4nsbr1hhd2j5g.apps.googleusercontent.com}"
+            client-id: "${GOOGLE_CLIENT_ID:277710406862-k1h0jcnngg5k64q5semb3pqvs295qe9v.apps.googleusercontent.com}"
             client-secret: "${GOOGLE_CLIENT_SECRET:}" # Load securely via environment variable
             scope:
               - profile

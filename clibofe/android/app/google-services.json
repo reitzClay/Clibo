@@ -12,7 +12,20 @@
           "package_name": "com.example.clibofe"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "277710406862-0uurdephivvukajejcac5u4fvg5u51kp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.clibofe",
+            "certificate_hash": "a906a3c66eff9842ad32c3bc5412e5fe663ff7d7"
+          }
+        },
+        {
+          "client_id": "277710406862-k1h0jcnngg5k64q5semb3pqvs295qe9v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDfLq7hbHZQuvd8RTPegBn1K0L2XyKTjXg"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "277710406862-k1h0jcnngg5k64q5semb3pqvs295qe9v.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "277710406862-ck491b22ld25k4jk2g4l9f3qtgn1knqa.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.clibofe"
+              }
+            }
+          ]
         }
       }
     }

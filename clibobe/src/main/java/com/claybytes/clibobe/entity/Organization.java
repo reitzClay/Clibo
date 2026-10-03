@@ -12,13 +12,46 @@ public class Organization {
     @Column(nullable = false)
     private String name;
 
-    // e.g., "company.com" to auto-route corporate Google logins
     @Column(name = "domain_restriction")
     private String domainRestriction;
 
-    // e.g., "ENTERPRISE", "TEAM_BASIC"
     @Column(nullable = false)
-    private String planTier;
+    private String planTier = "TEAM_BASIC";
 
-    // Getters, Setters, Constructors
+    public Organization() {
+    }
+
+    public Organization(String name, String domainRestriction, String planTier) {
+        this.name = name;
+        this.domainRestriction = domainRestriction;
+        this.planTier = planTier;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDomainRestriction() {
+        return domainRestriction;
+    }
+
+    public void setDomainRestriction(String domainRestriction) {
+        this.domainRestriction = domainRestriction;
+    }
+
+    public String getPlanTier() {
+        return planTier;
+    }
+
+    public void setPlanTier(String planTier) {
+        this.planTier = planTier;
+    }
 }
