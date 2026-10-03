@@ -1,8 +1,11 @@
 package com.claybytes.clibobe.service;
 
 import com.claybytes.clibobe.entity.ModalityType;
+import com.claybytes.clibobe.entity.Organization;
+import com.claybytes.clibobe.entity.OrganizationUsage;
 import com.claybytes.clibobe.entity.User;
 import com.claybytes.clibobe.entity.UserUsage;
+import com.claybytes.clibobe.repository.OrganizationUsageRepository;
 import com.claybytes.clibobe.repository.UserRepository;
 import com.claybytes.clibobe.repository.UserUsageRepository;
 import org.springframework.stereotype.Service;
@@ -15,10 +18,14 @@ import java.util.Map;
 public class UsageGuardrailService {
 
     private final UserUsageRepository usageRepository;
+    private final OrganizationUsageRepository orgUsageRepository;
     private final UserRepository userRepository;
 
-    public UsageGuardrailService(UserUsageRepository usageRepository, UserRepository userRepository) {
+    public UsageGuardrailService(UserUsageRepository usageRepository,
+                                 OrganizationUsageRepository orgUsageRepository,
+                                 UserRepository userRepository) {
         this.usageRepository = usageRepository;
+        this.orgUsageRepository = orgUsageRepository;
         this.userRepository = userRepository;
     }
 
@@ -32,11 +39,26 @@ public class UsageGuardrailService {
     }
 
     @Transactional
+    public OrganizationUsage getOrCreateOrgUsage(Organization org) {
+        return orgUsageRepository.findByOrganization(org)
+                .orElseGet(() -> {
+                    OrganizationUsage orgUsage = new OrganizationUsage(org);
+                    return orgUsageRepository.save(orgUsage);
+                });
+    }
+
+    @Transactional
     public boolean isUserAllowedToRequest(User user, ModalityType modality) {
         if ("PRO".equalsIgnoreCase(user.getUserTier()) ||
             "PREMIUM".equalsIgnoreCase(user.getUserTier()) ||
-            "ADMIN".equalsIgnoreCase(user.getSystemRole())) {
-            return true; // Pro/Admin users are permitted
+            "ADMIN".equalsIgnoreCase(user.getSystemRole()) ||
+            "ORG_ADMIN".equalsIgnoreCase(user.getSystemRole())) {
+            return true;
+        }
+
+        if (user.getOrganization() != null) {
+            OrganizationUsage orgUsage = getOrCreateOrgUsage(user.getOrganization());
+            return orgUsage.canUse(modality);
         }
 
         UserUsage usage = getOrCreateUsage(user);
@@ -45,13 +67,39 @@ public class UsageGuardrailService {
 
     @Transactional
     public void incrementUserUsage(User user, ModalityType modality) {
-        UserUsage usage = getOrCreateUsage(user);
-        usage.increment(modality);
-        usageRepository.save(usage);
+        if (user.getOrganization() != null) {
+            OrganizationUsage orgUsage = getOrCreateOrgUsage(user.getOrganization());
+            orgUsage.increment(modality);
+            orgUsageRepository.save(orgUsage);
+        } else {
+            UserUsage usage = getOrCreateUsage(user);
+            usage.increment(modality);
+            usageRepository.save(usage);
+        }
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> getUsageStats(User user) {
+        if (user.getOrganization() != null) {
+            OrganizationUsage orgUsage = getOrCreateOrgUsage(user.getOrganization());
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("userTier", user.getUserTier() + " (Org: " + user.getOrganization().getName() + ")");
+            stats.put("textMessagesUsed", orgUsage.getTextMessagesUsed());
+            stats.put("textMessagesLimit", orgUsage.getTextMessagesLimit());
+            stats.put("textMessagesRemaining", Math.max(0, orgUsage.getTextMessagesLimit() - orgUsage.getTextMessagesUsed()));
+
+            stats.put("screenshotsUsed", orgUsage.getScreenshotsUsed());
+            stats.put("screenshotsLimit", orgUsage.getScreenshotsLimit());
+            stats.put("screenshotsRemaining", Math.max(0, orgUsage.getScreenshotsLimit() - orgUsage.getScreenshotsUsed()));
+
+            stats.put("voiceNotesUsed", orgUsage.getVoiceNotesUsed());
+            stats.put("voiceNotesLimit", orgUsage.getVoiceNotesLimit());
+            stats.put("voiceNotesRemaining", Math.max(0, orgUsage.getVoiceNotesLimit() - orgUsage.getVoiceNotesUsed()));
+
+            stats.put("lastResetAt", orgUsage.getLastResetAt());
+            return stats;
+        }
+
         UserUsage usage = getOrCreateUsage(user);
         usage.resetDailyCountersIfExpired();
 
@@ -73,7 +121,6 @@ public class UsageGuardrailService {
         return stats;
     }
 
-    // Backwards-compatible methods for string UIDs / emails
     @Transactional
     public boolean isUserAllowedToRequest(String emailOrId) {
         return resolveUser(emailOrId)

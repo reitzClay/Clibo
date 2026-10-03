@@ -5,7 +5,9 @@ import com.claybytes.clibobe.entity.ModalityType;
 import com.claybytes.clibobe.entity.User;
 import com.claybytes.clibobe.repository.UserRepository;
 import com.claybytes.clibobe.service.UsageGuardrailService;
+import com.claybytes.clibobe.service.UserService;
 import com.claybytes.clibobe.service.ai.AiProviderService;
+import com.claybytes.clibobe.utilityService.GoogleAuthService;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,15 +36,21 @@ public class AiProxyController {
     private final Map<String, AiProviderService> providerServiceMap;
     private final UsageGuardrailService guardrailService;
     private final UserRepository userRepository;
+    private final GoogleAuthService googleAuthService;
+    private final UserService userService;
     private final Gson gson = new Gson();
 
     public AiProxyController(List<AiProviderService> providerServices,
                              UsageGuardrailService guardrailService,
-                             UserRepository userRepository) {
+                             UserRepository userRepository,
+                             GoogleAuthService googleAuthService,
+                             UserService userService) {
         this.providerServiceMap = providerServices.stream()
                 .collect(Collectors.toMap(AiProviderService::getProviderId, Function.identity()));
         this.guardrailService = guardrailService;
         this.userRepository = userRepository;
+        this.googleAuthService = googleAuthService;
+        this.userService = userService;
     }
 
     @GetMapping("/health")
@@ -112,10 +120,20 @@ public class AiProxyController {
     private Optional<User> resolveUser(String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            if (token.startsWith("dev_mock_token_") || token.equals("mock_google_jwt_456") || token.equals("mock_jwt_token_123")) {
-                return userRepository.findAll().stream().findFirst();
+            if (token.startsWith("dev_mock_token_")) {
+                return userRepository.findByEmail("dev@clibo.ai").or(() -> userRepository.findAll().stream().findFirst());
+            }
+            try {
+                com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload payload = googleAuthService.verifyToken(token);
+                if (payload != null && payload.getEmail() != null) {
+                    String email = payload.getEmail();
+                    String name = payload.get("name") != null ? payload.get("name").toString() : email.split("@")[0];
+                    return Optional.of(userService.processUserLogin(email, name));
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to resolve user from token: {}", e.getMessage());
             }
         }
-        return userRepository.findAll().stream().findFirst();
+        return Optional.empty();
     }
 }

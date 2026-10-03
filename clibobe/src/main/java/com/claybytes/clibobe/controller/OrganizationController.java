@@ -4,9 +4,12 @@ import com.claybytes.clibobe.entity.Organization;
 import com.claybytes.clibobe.entity.User;
 import com.claybytes.clibobe.repository.OrganizationRepository;
 import com.claybytes.clibobe.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -15,6 +18,8 @@ import java.util.Map;
 @RequestMapping("/api/v1/organizations")
 @CrossOrigin(origins = "*")
 public class OrganizationController {
+
+    private static final Logger logger = LoggerFactory.getLogger(OrganizationController.class);
 
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
@@ -26,6 +31,7 @@ public class OrganizationController {
     }
 
     @PostMapping("/register")
+    @Transactional
     public ResponseEntity<?> registerOrganization(@RequestBody Map<String, String> payload) {
         String name = payload.get("name");
         String domain = payload.get("domain");
@@ -62,6 +68,7 @@ public class OrganizationController {
                     "message", "Organization registered successfully"
             ));
         } catch (Exception e) {
+            logger.error("Failed to register organization: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to register organization: " + e.getMessage()));
         }

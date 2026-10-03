@@ -27,7 +27,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/clibo_db
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres-db:5432/clibo_db?currentSchema=public}
       - SPRING_DATASOURCE_USERNAME=clibo_user
       - SPRING_DATASOURCE_PASSWORD=clibo_pass
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}

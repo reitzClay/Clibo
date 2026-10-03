@@ -4,7 +4,7 @@ spring:
 
   # Database Connection Details
   datasource:
-    url: jdbc:postgresql://localhost:5432/clibo_db
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/clibo_db?currentSchema=public}"
     username: clibo_user
     password: clibo_pass
     driver-class-name: org.postgresql.Driver
@@ -17,6 +17,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        default_schema: public
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   # OAuth2 Security Configuration
