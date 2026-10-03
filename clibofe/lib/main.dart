@@ -305,7 +305,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: const BoxConstraints(maxWidth: 260),
+        constraints: const BoxConstraints(maxWidth: 260, maxHeight: 250),
         decoration: BoxDecoration(
           color: isAi ? Colors.white10 : Colors.blueGrey.shade900,
           borderRadius: BorderRadius.only(
@@ -315,9 +315,11 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
             bottomRight: Radius.circular(isAi ? 16 : 4),
           ),
         ),
-        child: Text(
-          text,
-          style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+        child: SingleChildScrollView(
+          child: Text(
+            text,
+            style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+          ),
         ),
       ),
     );
