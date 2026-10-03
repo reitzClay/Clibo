@@ -21,7 +21,7 @@ public class OllamaAiService implements AiProviderService {
 
     private static final Logger logger = LoggerFactory.getLogger(OllamaAiService.class);
 
-    private final String defaultOllamaBaseUrl = System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://host.docker.internal:11434");
+    private final String defaultOllamaBaseUrl = System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434");
 
     private final UsageGuardrailService guardrailService;
     private final Gson gson = new Gson();
@@ -46,7 +46,7 @@ public class OllamaAiService implements AiProviderService {
                 : "tinyllama:1.1b";
 
         WebClient webClient = WebClient.builder().baseUrl(targetOllamaUrl).build();
-        Map<String, Object> reqBody = Map.of(
+        Map<String, Object> chatReqBody = Map.of(
             "model", targetModel,
             "messages", List.of(Map.of("role", "user", "content", prompt)),
             "stream", false
@@ -55,26 +55,47 @@ public class OllamaAiService implements AiProviderService {
         return webClient.post()
                 .uri("/api/chat")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(gson.toJson(reqBody))
+                .bodyValue(gson.toJson(chatReqBody))
                 .retrieve()
                 .bodyToMono(String.class)
                 .map(responseJson -> {
                     Map respMap = gson.fromJson(responseJson, Map.class);
                     Map msgMap = (Map) respMap.get("message");
-                    String output = msgMap != null && msgMap.containsKey("content") 
+                    return msgMap != null && msgMap.containsKey("content") 
                         ? msgMap.get("content").toString() 
                         : "No output received from Ollama";
-
+                })
+                .onErrorResume(e -> {
+                    logger.info("Ollama /api/chat failed ({}), falling back to /api/generate", e.getMessage());
+                    Map<String, Object> genReqBody = Map.of(
+                        "model", targetModel,
+                        "prompt", prompt,
+                        "stream", false
+                    );
+                    return webClient.post()
+                            .uri("/api/generate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .bodyValue(gson.toJson(genReqBody))
+                            .retrieve()
+                            .bodyToMono(String.class)
+                            .map(responseJson -> {
+                                Map respMap = gson.fromJson(responseJson, Map.class);
+                                return respMap != null && respMap.containsKey("response")
+                                    ? respMap.get("response").toString()
+                                    : "No output received from Ollama";
+                            });
+                })
+                .map(output -> {
                     try {
                         guardrailService.incrementUserUsage(user, ModalityType.TEXT_MESSAGE);
-                    } catch (Exception e) {
-                        logger.error("Failed to increment usage: {}", e.getMessage());
+                    } catch (Exception ex) {
+                        logger.error("Failed to increment usage: {}", ex.getMessage());
                     }
 
                     return "data: " + gson.toJson(Map.of("text", output)) + "\n\n";
                 })
                 .onErrorResume(e -> {
-                    logger.error("Ollama local LLM error: {}", e.getMessage(), e);
+                    logger.error("Ollama local LLM error on both /api/chat and /api/generate: {}", e.getMessage(), e);
                     String errorJson = gson.toJson(Map.of("error", "Local LLM error (Ollama): " + e.getMessage() + ". Make sure Ollama is running and model is pulled."));
                     return Mono.just("data: " + errorJson + "\n\n");
                 })
