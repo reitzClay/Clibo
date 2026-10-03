@@ -19,7 +19,7 @@ import java.util.Map;
 @Service
 public class OllamaAiService implements AiProviderService {
 
-    private static final Logger logger = LoggerFactory.getLogger(OllamaAiService.java);
+    private static final Logger logger = LoggerFactory.getLogger(OllamaAiService.class);
 
     private final String defaultOllamaBaseUrl = System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://host.docker.internal:11434");
 
