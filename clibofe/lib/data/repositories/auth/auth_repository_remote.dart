@@ -13,7 +13,7 @@ class AuthRepositoryRemote implements AuthRepository {
 
   static const String baseUrl = String.fromEnvironment(
     'BACKEND_URL',
-    defaultValue: 'http://192.168.0.101:8080/api/v1',
+    defaultValue: 'http://192.168.0.103:8080/api/v1',
   );
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(

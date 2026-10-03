@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../app/service_locator.dart';
 import '../../../../data/repositories/auth/auth_repository.dart';
 import '../../../../domain/user/user.dart';
+import '../tabs/config_tab.dart';
+import '../tabs/history_tab.dart';
+import '../tabs/metrics_tab.dart';
 import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -79,10 +83,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
 
-    final List<Widget> tabViews = [
-      Center(child: Text("Chat Log History List View (Placeholder)", style: theme.textTheme.muted)),
-      Center(child: Text("Lottie Behaviour Settings View (Placeholder)", style: theme.textTheme.muted)),
-      Center(child: Text("Token Calculations & Metrics View (Placeholder)", style: theme.textTheme.muted)),
+    final List<Widget> tabViews = const [
+      HistoryTab(),
+      ConfigTab(),
+      MetricsTab(),
     ];
 
     final userName = _currentUser?.name ?? "Developer Mode";

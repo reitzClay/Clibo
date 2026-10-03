@@ -34,3 +34,10 @@ spring:
 gemini:
   api:
     key: "${GEMINI_API_KEY:}"
+
+ai:
+  provider: "${AI_PROVIDER:gemini}"
+
+ollama:
+  base:
+    url: "${OLLAMA_BASE_URL:http://ollama:11434}"

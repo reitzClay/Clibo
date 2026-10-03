@@ -32,7 +32,9 @@ services:
       - SPRING_DATASOURCE_PASSWORD=clibo_pass
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - GEMINI_API_KEY=AQ.Ab8RN6JCZOQ7-U69Nk7cXw77dlOBPoQNXIud5r6xWPW31q5Hrg
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-AQ.Ab8RN6JCZOQ7-U69Nk7cXw77dlOBPoQNXIud5r6xWPW31q5Hrg}
+      - AI_PROVIDER=${AI_PROVIDER:-gemini}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
     depends_on:
       postgres-db:
         condition: service_healthy

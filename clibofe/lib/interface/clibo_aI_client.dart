@@ -24,7 +24,7 @@ class BackendProxyAIClient implements CliboAIClient {
     FlutterSecureStorage? storage,
   }) : backendBaseUrl = backendBaseUrl ?? const String.fromEnvironment(
          'BACKEND_URL',
-         defaultValue: 'http://192.168.0.101:8080/api/v1',
+         defaultValue: 'http://192.168.0.103:8080/api/v1',
        ),
        _storage = storage ?? const FlutterSecureStorage();
 
@@ -37,6 +37,13 @@ class BackendProxyAIClient implements CliboAIClient {
     String? audioMimeType,
   }) async {
     final String? token = await _storage.read(key: _keyAuthToken);
+    final String providerId = await _storage.read(key: 'clibo_ai_provider') ?? 'ollama';
+    final String ollamaUrl = await _storage.read(key: 'clibo_ollama_url') ?? 'http://192.168.0.103:11434';
+    final String ollamaModel = await _storage.read(key: 'clibo_ollama_model') ?? 'tinyllama:1.1b';
+    final String byokKey = await _storage.read(key: 'clibo_byok_key') ?? '';
+    final String customUrl = await _storage.read(key: 'clibo_custom_provider_url') ?? '';
+    final String customModel = await _storage.read(key: 'clibo_custom_model') ?? '';
+
     final client = http.Client();
 
     try {
@@ -48,6 +55,12 @@ class BackendProxyAIClient implements CliboAIClient {
         })
         ..body = jsonEncode({
           'prompt': prompt,
+          'aiProvider': providerId,
+          'ollamaBaseUrl': ollamaUrl,
+          'ollamaModel': ollamaModel,
+          'byokApiKey': byokKey,
+          'customBaseUrl': customUrl,
+          'customModel': customModel,
           if (imageBase64 != null) 'imageBase64': imageBase64,
           if (imageMimeType != null) 'imageMimeType': imageMimeType,
           if (audioBase64 != null) 'audioBase64': audioBase64,
@@ -82,6 +95,9 @@ class BackendProxyAIClient implements CliboAIClient {
               if (parsed is Map) {
                 if (parsed.containsKey('error')) {
                   throw Exception(parsed['error']);
+                }
+                if (parsed.containsKey('text')) {
+                  result.write(parsed['text']);
                 }
                 if (parsed.containsKey('candidates')) {
                   final candidates = parsed['candidates'] as List;
@@ -128,6 +144,20 @@ class BackendProxyAIClient implements CliboAIClient {
       }
     } catch (_) {}
     return null;
+  }
+
+  /// Checks if the Spring Boot backend is healthy and reachable
+  Future<bool> checkBackendHealth() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$backendBaseUrl/ai/health'),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['status'] == 'UP';
+      }
+    } catch (_) {}
+    return false;
   }
 }
 
