@@ -1,6 +1,7 @@
-# Task List - Google Sign-In Fix & Organization Registration Flow
+# Task List - Terms of Service, Privacy Policy & Consent Logging System
 
-- `[x]` Implement Organization repository and registration controller on backend (`clibobe`)
-- `[x]` Enhance Google Sign-In error handling and add organization registration repository method on Flutter frontend (`clibofe`)
-- `[x]` Create Organization Registration screen and integrate into onboarding flow
-- `[x]` Verify Google Sign-In and organization sign-up on physical Android device
+- `[x]` Create `UserConsent` entity and `UserConsentRepository` on backend (`clibobe`)
+- `[x]` Create `ConsentController` endpoint (`POST /api/v1/auth/consent`) on backend (`clibobe`)
+- `[x]` Create `TermsOfServiceScreen` and `PrivacyPolicyScreen` document viewers on frontend (`clibofe`)
+- `[x]` Update `LoginScreen` footer with clickable ToS & Privacy Policy links and actionable consent confirmation popup
+- `[x]` Verify build, analyze, and consent audit logging

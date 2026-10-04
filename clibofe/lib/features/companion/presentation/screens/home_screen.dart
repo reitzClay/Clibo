@@ -49,6 +49,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _handleLogout() async {
+    try {
+      if (await FlutterOverlayWindow.isActive()) {
+        await FlutterOverlayWindow.shareData("CLEAR_CHAT");
+        await FlutterOverlayWindow.closeOverlay();
+      }
+    } catch (_) {}
     await _authRepository.signOut();
     if (!mounted) return;
     Navigator.of(context).pushReplacement(

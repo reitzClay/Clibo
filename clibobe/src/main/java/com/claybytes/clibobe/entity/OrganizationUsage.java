@@ -39,7 +39,13 @@ public class OrganizationUsage {
 
     public OrganizationUsage(Organization organization) {
         this.organization = organization;
-        if ("ENTERPRISE".equalsIgnoreCase(organization.getPlanTier())) {
+        String planTier = "TEAM_BASIC";
+        try {
+            if (organization != null) {
+                planTier = organization.getPlanTier();
+            }
+        } catch (Exception ignored) {}
+        if ("ENTERPRISE".equalsIgnoreCase(planTier)) {
             this.textMessagesLimit = 5000;
             this.screenshotsLimit = 1000;
             this.voiceNotesLimit = 2000;

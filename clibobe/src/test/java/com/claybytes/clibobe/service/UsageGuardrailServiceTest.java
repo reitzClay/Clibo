@@ -1,8 +1,11 @@
 package com.claybytes.clibobe.service;
 
 import com.claybytes.clibobe.entity.ModalityType;
+import com.claybytes.clibobe.entity.Organization;
+import com.claybytes.clibobe.entity.OrganizationUsage;
 import com.claybytes.clibobe.entity.User;
 import com.claybytes.clibobe.entity.UserUsage;
+import com.claybytes.clibobe.repository.OrganizationUsageRepository;
 import com.claybytes.clibobe.repository.UserRepository;
 import com.claybytes.clibobe.repository.UserUsageRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +30,9 @@ class UsageGuardrailServiceTest {
     private UserUsageRepository usageRepository;
 
     @Mock
+    private OrganizationUsageRepository orgUsageRepository;
+
+    @Mock
     private UserRepository userRepository;
 
     @InjectMocks
@@ -34,7 +40,10 @@ class UsageGuardrailServiceTest {
 
     private User freeUser;
     private User proUser;
+    private User orgUser;
     private UserUsage userUsage;
+    private Organization organization;
+    private OrganizationUsage orgUsage;
 
     @BeforeEach
     void setUp() {
@@ -48,11 +57,20 @@ class UsageGuardrailServiceTest {
         proUser.setName("Pro User");
         proUser.setUserTier("PRO");
 
+        organization = new Organization("Acme Corp", "acme.com", "TEAM_BASIC");
+        orgUser = new User();
+        orgUser.setEmail("user@acme.com");
+        orgUser.setName("Org User");
+        orgUser.setUserTier("FREE");
+        orgUser.setOrganization(organization);
+
         userUsage = new UserUsage(freeUser);
         userUsage.setTextMessagesLimit(30);
         userUsage.setScreenshotsLimit(20);
         userUsage.setVoiceNotesLimit(50);
         userUsage.setLastResetAt(LocalDateTime.now());
+
+        orgUsage = new OrganizationUsage(organization);
     }
 
     @Test
@@ -106,5 +124,17 @@ class UsageGuardrailServiceTest {
         assertEquals(18, stats.get("screenshotsRemaining"));
         assertEquals(10, stats.get("voiceNotesUsed"));
         assertEquals(40, stats.get("voiceNotesRemaining"));
+    }
+
+    @Test
+    void getUsageStats_OrganizationUser_ReturnsOrgUsageStats() {
+        when(orgUsageRepository.findByOrganization(organization)).thenReturn(Optional.of(orgUsage));
+
+        Map<String, Object> stats = guardrailService.getUsageStats(orgUser);
+
+        assertTrue(stats.get("userTier").toString().contains("Org: Acme Corp"));
+        assertEquals(0, stats.get("textMessagesUsed"));
+        assertEquals(500, stats.get("textMessagesLimit"));
+        assertEquals(500, stats.get("textMessagesRemaining"));
     }
 }

@@ -71,26 +71,25 @@ class AuthRepositoryRemote implements AuthRepository {
   Future<User?> signInWithEmail(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
+        Uri.parse('$baseUrl/auth/email'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email.trim(),
-          'password': password,
         }),
       );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        final String token = data['token']?.toString() ?? '';
+        final String token = email.trim();
         _currentUser = User.fromJson(data, token: token);
         await _saveUserSession(_currentUser!, token);
         return _currentUser;
       } else {
         final Map<String, dynamic> errorData = jsonDecode(response.body);
-        throw Exception(errorData['error'] ?? 'Authentication failed (${response.statusCode})');
+        throw Exception(errorData['error'] ?? 'Company Login failed (${response.statusCode})');
       }
     } catch (e) {
-      debugPrint("Email Login Error: $e");
+      debugPrint("Company Email Login Error: $e");
       rethrow;
     }
   }
@@ -223,5 +222,20 @@ class AuthRepositoryRemote implements AuthRepository {
     );
     await _saveUserSession(_currentUser!, 'dev_mock_token_999');
     return _currentUser;
+  }
+
+  @override
+  Future<void> logConsent(String policyVersion) async {
+    final String? token = await _storage.read(key: _keyAuthToken);
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/auth/consent'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'policyVersion': policyVersion}),
+      );
+    } catch (_) {}
   }
 }

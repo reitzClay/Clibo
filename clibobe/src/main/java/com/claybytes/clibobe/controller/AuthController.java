@@ -54,4 +54,23 @@ public class AuthController {
                     .body(Map.of("error", "Token verification engine failure: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/email")
+    public ResponseEntity<?> loginWithEmail(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+        }
+
+        try {
+            String cleanEmail = email.trim();
+            String name = cleanEmail.contains("@") ? cleanEmail.substring(0, cleanEmail.indexOf("@")) : "Company User";
+            User user = userService.processUserLogin(cleanEmail, name);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Company login failed: " + e.getMessage()));
+        }
+    }
 }

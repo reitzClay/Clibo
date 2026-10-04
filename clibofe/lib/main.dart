@@ -49,6 +49,23 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
   ];
   bool _isSending = false;
 
+  @override
+  void initState() {
+    super.initState();
+    FlutterOverlayWindow.overlayListener.listen((data) {
+      if (data == "CLEAR_CHAT") {
+        if (mounted) {
+          setState(() {
+            _messages.clear();
+            _messages.add({'text': 'How can I help you today?', 'isAi': true});
+            isExpanded = false;
+            isMaximized = false;
+          });
+        }
+      }
+    });
+  }
+
   void _toggleExpansion() async {
     setState(() {
       isExpanded = !isExpanded;
@@ -123,6 +140,12 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
         child: GestureDetector(
           onTap: isExpanded ? null : _toggleExpansion,
           onDoubleTap: () async {
+            setState(() {
+              _messages.clear();
+              _messages.add({'text': 'How can I help you today?', 'isAi': true});
+              isExpanded = false;
+              isMaximized = false;
+            });
             await FlutterOverlayWindow.closeOverlay();
           },
           child: AnimatedContainer(

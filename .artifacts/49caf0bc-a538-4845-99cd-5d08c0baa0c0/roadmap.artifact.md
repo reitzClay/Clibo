@@ -9,34 +9,33 @@ The ultimate experience combines multi-modal perception (text, vision, voice) wi
 
 ## Roadmap Phases
 
-### Phase 1: Core Architecture & Text Streaming (Current Milestone)
-*Status: [x] Completed*
+### Phase 1: Core Architecture & Authentication (In Progress)
+*Status: [/] In Progress*
 - [x] Spring Boot enterprise backend (`clibobe`) with Strategy Pattern for multi-provider AI routing.
-- [x] Support for local LLMs (Ollama) and cloud models (Google Gemini / BYOK).
 - [x] Flutter overlay window (`clibofe`) with real-time SSE streaming.
-- [x] PostgreSQL metered usage guardrails and quotas (`user_usages`).
+- [x] PostgreSQL metered usage guardrails and quotas (`user_usages` & `organization_usages`).
+- [x] Google Sign-In, Organization registration & company login flows.
+- [/] **Logout Chat History Reset**: Ensure chat overlay messages are cleared across user sessions when logging out.
 
-### Phase 1.5: Authentication, Organization Sign-Up, Billing & Monetization (Foundations)
-*Status: [ ] TODO / Next Priority*
-- [ ] **Google Sign-In Fix**: Wire up Firebase Auth client-side login with backend token verification (`FirebaseAuthService`).
-- [ ] **Organization Registration Flow**: Build company/team sign-up and onboarding screens so organizations can register accounts and manage team users.
-- [ ] **Play Billing & Subscriptions**: Integrate Google Play Billing Library to handle subscription tiers (Free, Pro, Enterprise) linked to user and organization quotas.
-- [ ] **Ads Integration**: Implement ad SDK / banners for free-tier monetization.
+### Phase 2: Multi-Provider Chat Testing & Stability (Up Next)
+*Status: [ ] Planned*
+- [ ] Test and verify robust text chat across multiple AI providers (Google Gemini, Local Ollama, BYOK keys, and custom endpoints).
+- [ ] Ensure seamless provider switching and error handling in the frontend config and backend proxy.
 
-### Phase 2: Multi-Modal Vision & Screen Intelligence
+### Phase 3: Multi-Modal Vision & Screen Intelligence
 *Status: [ ] Planned*
 - [ ] Implement `AndroidScreenCapturer` for on-demand screenshot acquisition.
 - [ ] Transmit image payloads securely through the Spring Boot backend proxy.
 - [ ] Integrate multi-modal AI models (e.g., Gemini Flash, Llava via Ollama) to interpret screen contents.
 - [ ] Add quick-action screen analysis triggers ("What's on my screen?", "Summarize this page").
 
-### Phase 3: Voice & Audio Interactivity
+### Phase 4: Voice & Audio Interactivity
 *Status: [ ] Planned*
 - [ ] Implement audio recording service within the floating overlay.
 - [ ] Support voice note attachments and transcription workflows.
 - [ ] Enable real-time audio interaction and text-to-speech feedback.
 
-### Phase 4: Advanced UI/UX, Lottie Animations & Sensors
+### Phase 5: Advanced UI/UX, Lottie Animations & Sensors
 *Status: [ ] Future Vision*
 - [ ] Replace static placeholder avatar with dynamic **Lottie animations**.
 - [ ] Integrate device sensors (gyroscope and accelerometer) so the floating character reacts to phone tilt and physical shakes.

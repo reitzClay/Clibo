@@ -1,38 +1,41 @@
-# Implementation Plan - Google Sign-In Fix & Organization Registration Flow
+# Implementation Plan - Terms of Service, Privacy Policy & Consent Logging System
 
-This plan outlines the steps to fix Google Sign-In on physical Android devices and implement a multi-tenant Organization Registration and Sign-Up flow on both the Spring Boot backend (`clibobe`) and Flutter frontend (`clibofe`).
+This plan outlines the implementation of legal compliance features for Clibo (operated by **ClayBytes**), including persistent consent logging on the backend, clickable legal links, policy viewing screens, and an actionable consent modal on login/sign-up.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> **Google Sign-In SHA-1 Requirement**: For Google Sign-In to work on physical Android devices, your PC's debug keystore SHA-1 fingerprint must be registered in your Firebase Console project settings.
-
-## Open Questions
-- Should organization registration be tied directly to Google Sign-In domain matching (e.g., auto-joining based on `@company.com`), or a dedicated sign-up screen? (We propose a dedicated Organization Sign-Up form during onboarding).
+> **Legal Policy Content**: The Terms of Service and Privacy Policy will be structured for **ClayBytes**, covering Google Authentication, encrypted local storage, multi-tenant organization workspaces, and database chat history auditing for compliance.
 
 ## Proposed Changes
 
 ### Backend (`clibobe`)
 
-#### [MODIFY] [OrganizationRepository.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/repository/OrganizationRepository.java)
-- Add data access methods for finding and saving organizations.
+#### [NEW] [UserConsent.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/entity/UserConsent.java)
+- Entity for recording user consent timestamp, IP address, user ID, and policy version (`v1.0`).
 
-#### [NEW] [OrganizationController.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/controller/OrganizationController.java)
-- Create endpoints for registering new organizations (`POST /api/v1/organizations/register`) and fetching organization details.
+#### [NEW] [UserConsentRepository.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/repository/UserConsentRepository.java)
+- Spring Data JPA repository for persisting user consents.
+
+#### [NEW] [ConsentController.java](file:///C:/Users/Clayt/Documents/Development/Clibo/clibobe/src/main/java/com/claybytes/clibobe/controller/ConsentController.java)
+- REST endpoint (`POST /api/v1/auth/consent`) to log user acceptance of ToS and Privacy Policy.
 
 ### Frontend (`clibofe`)
 
-#### [MODIFY] [auth_repository_remote.dart](file:///C:/Users/Clayt/Documents/Development/Clibo/clibofe/lib/data/repositories/auth/auth_repository_remote.dart)
-- Enhance Google Sign-In error handling and logging to diagnose platform sign-in exceptions (e.g., SHA-1 / configuration issues).
-- Add organization registration method `registerOrganization(...)`.
+#### [NEW] [terms_of_service_screen.dart](file:///C:/Users/Clayt/Documents/Development/Clibo/clibofe/lib/features/companion/presentation/screens/terms_of_service_screen.dart)
+- Full-screen document viewer for ClayBytes / Clibo Terms of Service.
 
-#### [NEW] [register_organization_screen.dart](file:///C:/Users/Clayt/Documents/Development/Clibo/clibofe/lib/features/companion/presentation/screens/register_organization_screen.dart)
-- Build a company account sign-up screen where admins can input organization name, domain, and plan tier.
+#### [NEW] [privacy_policy_screen.dart](file:///C:/Users/Clayt/Documents/Development/Clibo/clibofe/lib/features/companion/presentation/screens/privacy_policy_screen.dart)
+- Full-screen document viewer for ClayBytes / Clibo Privacy Policy.
+
+#### [MODIFY] [login_screen.dart](file:///C:/Users/Clayt/Documents/Development/Clibo/clibofe/lib/features/companion/presentation/screens/login_screen.dart)
+- Update footer text with clickable spans or links for Terms of Service and Privacy Policy.
+- Show actionable consent confirmation dialog upon sign-in/registration and log consent to backend.
 
 ## Verification Plan
 
 ### Automated Tests
-- Backend unit tests for organization registration and Google auth endpoints.
+- Backend unit tests for consent controller and repository.
 ### Manual Verification
-- Deploy backend and test Google Sign-In on physical USB-connected device.
-- Test organization registration flow from the Flutter app.
+- Test clicking ToS and Privacy Policy links on the login screen.
+- Verify consent logging in PostgreSQL database.

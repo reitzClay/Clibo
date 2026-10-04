@@ -3,6 +3,7 @@ package com.claybytes.clibobe.service.ai;
 import com.claybytes.clibobe.dto.AiPromptRequest;
 import com.claybytes.clibobe.entity.ModalityType;
 import com.claybytes.clibobe.entity.User;
+import com.claybytes.clibobe.service.ChatHistoryService;
 import com.claybytes.clibobe.service.UsageGuardrailService;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
@@ -24,10 +25,12 @@ public class OllamaAiService implements AiProviderService {
     private final String defaultOllamaBaseUrl = System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434");
 
     private final UsageGuardrailService guardrailService;
+    private final ChatHistoryService chatHistoryService;
     private final Gson gson = new Gson();
 
-    public OllamaAiService(UsageGuardrailService guardrailService) {
+    public OllamaAiService(UsageGuardrailService guardrailService, ChatHistoryService chatHistoryService) {
         this.guardrailService = guardrailService;
+        this.chatHistoryService = chatHistoryService;
     }
 
     @Override
@@ -88,8 +91,9 @@ public class OllamaAiService implements AiProviderService {
                 .map(output -> {
                     try {
                         guardrailService.incrementUserUsage(user, ModalityType.TEXT_MESSAGE);
+                        chatHistoryService.logChatInteraction(user, prompt, output);
                     } catch (Exception ex) {
-                        logger.error("Failed to increment usage: {}", ex.getMessage());
+                        logger.error("Failed to increment usage or log chat: {}", ex.getMessage());
                     }
 
                     return "data: " + gson.toJson(Map.of("text", output)) + "\n\n";

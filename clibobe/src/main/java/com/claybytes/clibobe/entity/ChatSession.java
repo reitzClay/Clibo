@@ -24,4 +24,20 @@ public class ChatSession {
 
     @OneToMany(mappedBy = "chatSession", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChatMessage> messages = new ArrayList<>();
+
+    public ChatSession() {}
+
+    public ChatSession(User user, String title) {
+        this.user = user;
+        this.title = title;
+    }
+
+    public Long getId() { return id; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public List<ChatMessage> getMessages() { return messages; }
+    public void setMessages(List<ChatMessage> messages) { this.messages = messages; }
 }

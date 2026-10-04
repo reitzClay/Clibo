@@ -47,6 +47,21 @@ class AuthRepositoryDev implements AuthRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> registerOrganization({
+    required String name,
+    required String domain,
+    required String planTier,
+    required String adminEmail,
+    required String adminName,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 800));
+    return {
+      'organization': {'id': 1, 'name': name, 'domainRestriction': domain, 'planTier': planTier},
+      'admin': {'id': 10, 'email': adminEmail, 'name': adminName}
+    };
+  }
+
+  @override
   Future<void> signOut() async {
     _mockUser = null;
   }
@@ -63,5 +78,10 @@ class AuthRepositoryDev implements AuthRepository {
       token: 'dev_mock_token_999',
     );
     return _mockUser;
+  }
+
+  @override
+  Future<void> logConsent(String policyVersion) async {
+    await Future.delayed(const Duration(milliseconds: 200));
   }
 }

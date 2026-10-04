@@ -3,6 +3,7 @@ package com.claybytes.clibobe.service.ai;
 import com.claybytes.clibobe.dto.AiPromptRequest;
 import com.claybytes.clibobe.entity.ModalityType;
 import com.claybytes.clibobe.entity.User;
+import com.claybytes.clibobe.service.ChatHistoryService;
 import com.claybytes.clibobe.service.UsageGuardrailService;
 import com.google.genai.Client;
 import com.google.genai.gaos.models.interactions.CreateModelInteraction;
@@ -28,11 +29,13 @@ public class GeminiAiService implements AiProviderService {
     private final String geminiApiKey = System.getenv().getOrDefault("GEMINI_API_KEY", "");
 
     private final UsageGuardrailService guardrailService;
+    private final ChatHistoryService chatHistoryService;
     private final Gson gson = new Gson();
     private Client client;
 
-    public GeminiAiService(UsageGuardrailService guardrailService) {
+    public GeminiAiService(UsageGuardrailService guardrailService, ChatHistoryService chatHistoryService) {
         this.guardrailService = guardrailService;
+        this.chatHistoryService = chatHistoryService;
     }
 
     @Override
@@ -94,8 +97,9 @@ public class GeminiAiService implements AiProviderService {
 
             try {
                 guardrailService.incrementUserUsage(user, ModalityType.TEXT_MESSAGE);
+                chatHistoryService.logChatInteraction(user, prompt, output);
             } catch (Exception e) {
-                logger.error("Failed to increment usage for user {}: {}", user.getEmail(), e.getMessage());
+                logger.error("Failed to increment usage or log chat for user {}: {}", user.getEmail(), e.getMessage());
             }
 
             return Flux.just("data: " + gson.toJson(Map.of("text", output)) + "\n\n");
