@@ -25,9 +25,9 @@ clibofe/lib/
 ├── features/
 │   └── companion/
 │       └── presentation/
-│           ├── screens/  # HomeScreen, LoginScreen, SplashScreen
+│           ├── screens/  # HomeScreen, LoginScreen, SplashScreen, Terms/Privacy screens
 │           ├── tabs/     # ConfigTab, HistoryTab, MetricsTab
-│           └── widgets/  # Config cards, BYOK inputs, status cards
+│           └── widgets/  # Config cards (Gemini, Ollama, Custom), status cards
 └── interface/
     └── clibo_ai_client.dart # Abstract AI client & BackendProxyAIClient (SSE streaming)
 ```
@@ -53,9 +53,10 @@ Clibo's AI client abstraction ([clibo_ai_client.dart](file:///C:/Users/Clayt/Doc
 - **`AndroidScreenCapturer`**: Interfaces with native Android screen recording/capture APIs (`MediaProjection`).
 - Captures screen pixels into `Uint8List`, compresses them, and passes them as Base64-encoded images (`imageBase64` + `imageMimeType`) to the AI proxy. This enables the assistant to "see" what is on the user's screen and answer questions about it contextually.
 
-### B. Text
+### B. Text & SSE Streaming
 - Standard natural language prompts submitted via text input fields.
 - Processed with Server-Sent Events (SSE) streaming (`Accept: text/event-stream`), allowing real-time token rendering in the UI.
+- Clean JSON error catching extracts server error messages seamlessly into the overlay interface.
 
 ### C. Voice
 - Captures audio input from the user's microphone.
@@ -63,9 +64,13 @@ Clibo's AI client abstraction ([clibo_ai_client.dart](file:///C:/Users/Clayt/Doc
 
 ---
 
-## 5. AI Client Abstraction & Providers
+## 5. AI Client Abstraction & Config Tab
 
 The frontend uses the `CliboAIClient` interface to support multiple backend routing options:
 1. **`BackendProxyAIClient`**: The primary production client. Proxies requests to the Spring Boot backend (`/api/v1/ai/chat`), attaching authentication tokens (`Bearer token`) and enforcing server-side usage guardrails.
-2. **`GeminiClient` (BYOK)**: Allows advanced users to input their own Gemini API keys directly into local secure storage (`flutter_secure_storage`).
-3. **`OpenAiCompatibleClient`**: Supports custom endpoints (e.g., local Ollama or OpenAI-compatible gateways).
+2. **Context-Sensitive Config Tab**:
+   - **Dropdown Selector**: Easily switch between **Google Gemini**, **Local Ollama**, **OpenAI**, **Claude**, or **Custom Endpoints**. Unnecessary configuration fields are automatically hidden.
+   - **Google Gemini Card**: Supports **Gateway Proxy** (default free tier) and **Bring Your Own Key (BYOK)** modes.
+   - **Local Ollama Card**: Shows zero-token local AI notice and host network IP configurations (`192.168.0.103:11434`).
+   - **Expandable Advanced Settings**: Collapsible accordion tile hiding Spring Boot Gateway URL configuration to maintain a clean UI.
+3. **`GeminiClient` / `OpenAiCompatibleClient`**: Client-side BYOK direct connection wrappers.

@@ -149,7 +149,21 @@ class BackendProxyAIClient implements CliboAIClient {
         .replaceAll(r'\n', '\n')
         .replaceAll(r'\"', '"')
         .replaceAll(r'\u0027', "'")
-        .replaceAll(r'\\', '\\');
+        .replaceAll(r'\\', '\\')
+        .trim();
+
+    if (cleaned.startsWith('data:')) {
+      cleaned = cleaned.substring(5).trim();
+    }
+
+    if (cleaned.startsWith('{"error":') || cleaned.contains('"error":')) {
+      try {
+        final decoded = jsonDecode(cleaned);
+        if (decoded is Map && decoded.containsKey('error')) {
+          return "Error: ${decoded['error']}";
+        }
+      } catch (_) {}
+    }
 
     if (cleaned.startsWith('{"text":') || cleaned.startsWith('{"response":')) {
       try {

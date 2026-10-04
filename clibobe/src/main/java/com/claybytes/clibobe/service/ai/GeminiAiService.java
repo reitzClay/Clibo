@@ -6,19 +6,13 @@ import com.claybytes.clibobe.entity.User;
 import com.claybytes.clibobe.service.ChatHistoryService;
 import com.claybytes.clibobe.service.UsageGuardrailService;
 import com.google.genai.Client;
-import com.google.genai.gaos.models.interactions.CreateModelInteraction;
-import com.google.genai.gaos.models.interactions.Interaction;
-import com.google.genai.gaos.models.interactions.InteractionsInput;
-import com.google.genai.gaos.models.interactions.Model;
-import com.google.genai.gaos.models.operations.CreateInteractionRequestBody;
+import com.google.genai.types.GenerateContentResponse;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -26,12 +20,12 @@ public class GeminiAiService implements AiProviderService {
 
     private static final Logger logger = LoggerFactory.getLogger(GeminiAiService.class);
 
-    private final String geminiApiKey = System.getenv().getOrDefault("GEMINI_API_KEY", "");
+    private final String geminiApiKey = System.getenv().getOrDefault("GEMINI_API_KEY", "AQ.Ab8RN6JCZOQ7-U69Nk7cXw77dlOBPoQNXIud5r6xWPW31q5Hrg");
 
     private final UsageGuardrailService guardrailService;
     private final ChatHistoryService chatHistoryService;
     private final Gson gson = new Gson();
-    private Client client;
+    private Client defaultClient;
 
     public GeminiAiService(UsageGuardrailService guardrailService, ChatHistoryService chatHistoryService) {
         this.guardrailService = guardrailService;
@@ -48,51 +42,43 @@ public class GeminiAiService implements AiProviderService {
         if (keyToUse != null && !keyToUse.isBlank()) {
             return Client.builder().apiKey(keyToUse).build();
         }
-        if (client == null) {
-            client = new Client();
+        if (defaultClient == null) {
+            defaultClient = new Client();
         }
-        return client;
+        return defaultClient;
     }
 
     @Override
     public Flux<String> generateStream(User user, AiPromptRequest request, String prompt) {
         try {
-            CreateModelInteraction params =
-                CreateModelInteraction.builder()
-                    .model(Model.of("gemini-2.5-flash-lite"))
-                    .input(InteractionsInput.of(prompt))
-                    .build();
-
             String customKey = (request != null) ? request.getByokApiKey() : null;
-            Interaction interaction =
-                getClient(customKey).interactions
-                    .create(CreateInteractionRequestBody.of(params))
-                    .interaction()
-                    .get();
+            Client client = getClient(customKey);
 
-            String output = "No output received";
-            try {
-                String json = gson.toJson(interaction);
-                Map map = gson.fromJson(json, Map.class);
-                List steps = (List) map.get("steps");
-                if (steps != null) {
-                    for (Object step : steps) {
-                        Map stepMap = (Map) step;
-                        if ("model_output".equals(stepMap.get("type"))) {
-                            List contentList = (List) stepMap.get("content");
-                            if (contentList != null && !contentList.isEmpty()) {
-                                Map contentMap = (Map) contentList.get(0);
-                                if (contentMap.containsKey("text")) {
-                                    output = contentMap.get("text").toString();
-                                    break;
-                                }
-                            }
-                        }
+            String output = null;
+            String[] modelsToTry = new String[]{
+                "gemini-3.5-flash-lite",
+                "gemini-3.8-flash",
+                "gemini-3.5-flash",
+                "gemini-3.6-flash",
+                "gemini-3.7-flash",
+                "gemini-flash-latest"
+            };
+
+            for (String modelName : modelsToTry) {
+                try {
+                    GenerateContentResponse response = client.models.generateContent(modelName, prompt, null);
+                    if (response != null && response.text() != null && !response.text().isBlank()) {
+                        output = response.text();
+                        logger.info("Successfully generated response using model {}", modelName);
+                        break;
                     }
+                } catch (Exception modelEx) {
+                    logger.warn("Gemini model {} failed: {}", modelName, modelEx.getMessage());
                 }
-            } catch (Exception parseEx) {
-                logger.warn("Failed to parse interaction json: {}", parseEx.getMessage());
-                output = interaction.outputText().orElse("No output received");
+            }
+
+            if (output == null || output.isBlank()) {
+                throw new RuntimeException("Gemini generation failed. Please check your Gemini API key in the Config Tab or environment.");
             }
 
             try {
