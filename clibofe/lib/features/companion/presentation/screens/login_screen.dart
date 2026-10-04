@@ -5,7 +5,7 @@ import '../../../../app/service_locator.dart';
 import '../../../../data/repositories/auth/auth_repository.dart';
 import '../widgets/google_sign_in_button.dart';
 import 'home_screen.dart';
-import 'register_organization_screen.dart';
+// import 'register_organization_screen.dart'; // Retained for future B2B/Company feature expansion
 import 'terms_of_service_screen.dart';
 import 'privacy_policy_screen.dart';
 
@@ -113,96 +113,12 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  /*
+  // Retained for future B2B/Company feature expansion
   void _showCompanyLoginDialog() {
-    _showConsentAndProceed(() {
-      final TextEditingController emailController = TextEditingController();
-      bool isDialogLoading = false;
-
-      showDialog(
-        context: context,
-        builder: (context) {
-          return StatefulBuilder(
-            builder: (context, setDialogState) {
-              return AlertDialog(
-                backgroundColor: Colors.grey.shade900,
-                title: const Text("Company Login", style: TextStyle(color: Colors.white)),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      "Enter your company or organization email (e.g., admin@acme.com) to sign in.",
-                      style: TextStyle(color: Colors.white70, fontSize: 13),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: emailController,
-                      style: const TextStyle(color: Colors.white),
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        hintText: "admin@acme.com",
-                        hintStyle: const TextStyle(color: Colors.white38),
-                        filled: true,
-                        fillColor: Colors.white10,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-                      ),
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: isDialogLoading ? null : () => Navigator.of(context).pop(),
-                    child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-                    onPressed: isDialogLoading
-                        ? null
-                        : () async {
-                            final email = emailController.text.trim();
-                            if (email.isEmpty || !email.contains('@')) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Please enter a valid email address")),
-                              );
-                              return;
-                            }
-
-                            setDialogState(() => isDialogLoading = true);
-                            try {
-                              final user = await _authRepository.signInWithEmail(email, '');
-                              if (user != null && mounted) {
-                                Navigator.of(context).pop(); // close dialog
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute(builder: (_) => const HomeScreen()),
-                                );
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text("Company login failed: ${e.toString().replaceAll('Exception: ', '')}"),
-                                    backgroundColor: Colors.red.shade800,
-                                  ),
-                                );
-                              }
-                            } finally {
-                              if (mounted) {
-                                setDialogState(() => isDialogLoading = false);
-                              }
-                            }
-                          },
-                    child: isDialogLoading
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text("Sign In", style: TextStyle(color: Colors.white)),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-      );
-    });
+    ...
   }
+  */
 
   @override
   Widget build(BuildContext context) {
@@ -242,16 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Spacer(flex: 1),
 
               // 3. Google Sign-In Button
-              GestureDetector(
-                onTap: () {
-                  _showConsentAndProceed(() {
-                    // Google sign in action handled internally by button, but wrapped with consent check
-                  });
-                },
-                child: AbsorbPointer(
-                  child: const GoogleSignInButton(),
-                ),
-              ),
+              const GoogleSignInButton(),
               const SizedBox(height: 16),
 
               // 4. Developer Test Login Button (Bypass)
@@ -284,9 +191,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
               ),
-              const SizedBox(height: 12),
 
-              // 5. Company Login Button
+              /*
+              // 5. Company Login & Registration Buttons (Retained for future B2B/Company feature expansion)
+              const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: _showCompanyLoginDialog,
                 style: OutlinedButton.styleFrom(
@@ -323,6 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(color: Colors.blueAccent, fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ),
+              */
 
               const Spacer(flex: 2),
 
