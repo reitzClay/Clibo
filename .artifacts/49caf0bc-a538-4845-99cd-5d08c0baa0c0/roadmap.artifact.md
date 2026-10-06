@@ -1,14 +1,10 @@
-# Clibo AI Companion & ClayBytes Ecosystem Roadmap
+# Clibo AI Companion - Updated Production Release Roadmap
 
 ## Vision & Strategic Core Concept
-Clibo is a context-aware, cross-app floating AI companion designed to bridge the gap between users and their digital environment across Android devices.
+Clibo is a context-aware, zero-context-switching floating AI companion that sits over any Android app (Snapchat, Instagram, Browser, Notes, etc.).
 
-Beyond being a standalone product, Clibo serves as the flagship open-portfolio showcase for **ClayBytes** ([claybytes.nl](https://claybytes.nl/)), highlighting 17+ years of elite software engineering evolved into modern **AI-First Development** (Flutter, Java 21, Spring Boot, Docker, GCP, and multi-model LLM orchestration).
-
-### Growth & Monetization Strategy
-1. **Portfolio & Authority Marketing (YouTube Dev-Logs)**: Documenting the end-to-end building journey, teaching the next generation of developers how to program with AI, and building an engaged audience that converts into consultancy clients and students.
-2. **Free, Robust Developer Preview (Beta)**: Keeping the app free during initial rollout to iron out bugs, gather user feedback, and establish rock-solid stability with a Free Gemini Tier + BYOK (Bring Your Own Key) options.
-3. **The Lottie Overlay Creator Marketplace (Future Ecosystem)**: An in-app creator store where digital artists and animators can design, publish, and sell custom Lottie companion overlays and skins via In-App Purchases (IAP).
+**Production MVP Pivot Strategy**:
+To get to market fast, generate YouTube DevLogs, and acquire real users, **Clibo is launching with a polished Text-Only Floating Assistant MVP**. Features like Multi-Modal Vision and Voice will be rolled out as major post-launch update episodes in the DevLog series.
 
 ---
 
@@ -18,36 +14,34 @@ Beyond being a standalone product, Clibo serves as the flagship open-portfolio s
 *Status: [x] Completed*
 - [x] Spring Boot enterprise backend (`clibobe`) with Strategy Pattern for multi-provider AI routing.
 - [x] Flutter overlay window (`clibofe`) with real-time SSE streaming.
-- [x] PostgreSQL metered usage guardrails, multi-tenant organization workspaces, and database chat audit logging (`chat_sessions`, `chat_messages`, `user_consents`).
-- [x] Google Sign-In, Company login, organization registration, and legal Terms of Service / Privacy Policy compliance for ClayBytes.
-- [x] Chat history cache clearing on logout and overlay dismissal.
+- [x] PostgreSQL metered usage guardrails and compliance logging.
+- [x] Google Sign-In, Terms of Service & Privacy Policy integration.
 
 ### Phase 2: Multi-Provider Chat Testing & Stability (Completed)
 *Status: [x] Completed*
-- [x] Streamlined login screen flow: Removed popup interceptor on Google Sign-In button and commented out B2B company login clutter.
-- [x] Redesigned Config Tab with context-aware provider cards (`GeminiConfigCard`, `OllamaConfigCard`, `ByokKeyInput`, `CustomEndpointCard`).
-- [x] Moved Spring Boot Gateway URL into an expandable `⚙️ Advanced Gateway Settings` accordion.
-- [x] Integrated Google Gemini Cloud models (`gemini-3.5-flash-lite`, `gemini-3.8-flash`, `gemini-3.5-flash`) with 100% success rate on Google AI Studio.
-- [x] Verified BYOK API key passing and local network physical device IP retention (`192.168.0.103`).
-- [x] Enhanced SSE error parsing in `BackendProxyAIClient` for clean error rendering.
+- [x] Context-aware Config Tab with provider dropdowns.
+- [x] Google Gemini Cloud (`gemini-3.5-flash-lite`, `gemini-3.8-flash`) integration.
+- [x] Local Ollama container support and physical device IP retention.
 
-### Phase 3: Multi-Modal Vision & Image Attachments (Completed)
-*Status: [x] Completed*
-- [x] Built multi-modal image payload pipeline (`imageBase64` + `imageMimeType`) in `BackendProxyAIClient` and Spring Boot `GeminiAiService.java`.
-- [x] Integrated Google Gemini `gemini-3.5-flash-lite` vision analysis for multi-modal text and visual prompts.
-- [x] Updated Android 14+ / targetSDK 36 Foreground Service declarations (`foregroundServiceType="specialUse"`) in `AndroidManifest.xml`.
-- [x] Documented Flutter overlay isolate boundaries: `OverlayService` runs in a background service isolate where plugins requiring `ActivityBinding` (`image_picker`, `MediaProjectionManager`) require activity-context bridging.
-- [x] Integrated manual screenshot and image attachment workflow (`image_picker`) allowing users to attach screenshots and photos directly into the overlay chat.
-
-### Phase 4: Voice & Audio Interactivity (Up Next)
+### Phase 3: Text-Only Floating Companion MVP & Production Polish (ACTIVE)
 *Status: [/] In Progress*
-- [ ] Extend Inter-Isolate Communication Bridge for audio recording (`RECORD_AUDIO` / `AUDIO_CAPTURED`).
-- [ ] Implement audio recording service in Flutter overlay / main engine.
-- [ ] Transmit `audioBase64` and `audioMimeType` through backend proxy to Gemini multi-modal audio pipeline.
-- [ ] Enable real-time voice notes and text-to-speech audio feedback.
+- [ ] **Overlay Input Fixes**: Enable native long-press text selection and pasting in overlay `TextField`.
+- [ ] **Chat Scrolling Physics Fix**: Remove nested `SingleChildScrollView` scroll conflicts inside chat bubbles for smooth list scrolling.
+- [ ] **Cozy UI Model Selector**: Redesign provider & model selection with brand logos (Gemini, Ollama, OpenAI badges), friendly display names, and cozy badges instead of raw technical model strings (`gemini-3.5-flash-lite`).
+- [ ] **UI Refinement & Theme Polish**: Apply finished look across floating overlay and main application screens.
+- [ ] **Code Architecture Refactoring**:
+  - Decouple `main.dart` (extract `CliboRobotOverlay` into a dedicated feature module following SRP).
+  - Eliminate code smells, magic strings, and oversized classes across `clibofe` and `clibobe`.
+- [ ] **Monetization & App Store Readiness**:
+  - Implement zero-cost BYOK (Bring Your Own Key) + Free Proxy Tier.
+  - Non-intrusive ad placement strategy (Main app screen banner) / Pro tier setup.
 
-### Phase 5: Advanced UI/UX, Lottie Animations & Creator Marketplace
-*Status: [ ] Future Vision*
-- [ ] Replace static placeholder avatar with dynamic **Lottie animations**.
-- [ ] Integrate device sensors (gyroscope and accelerometer) so the floating character reacts to phone tilt and physical shakes.
-- [ ] Build the in-app **Lottie Overlay Creator Store** enabling artists to publish and monetize custom companion skins.
+### Phase 4: Post-Launch DevLog Episode 1 - Multi-Modal Vision (Post-Launch Update)
+*Status: [ ] Planned for DevLog Episode*
+- [ ] Re-enable and polish multi-modal screenshot/image picking pipeline (`image_picker` inter-isolate bridge).
+- [ ] Vision prompt templates (summarize document, analyze chart, describe screen).
+
+### Phase 5: Post-Launch DevLog Episode 2 - Voice Interactivity & Lottie Marketplace (Future)
+*Status: [ ] Planned for DevLog Episode*
+- [ ] Inter-isolate audio recording bridge (`RECORD_AUDIO`).
+- [ ] Lottie animation skins and creator marketplace.
