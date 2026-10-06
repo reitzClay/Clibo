@@ -25,15 +25,16 @@ To get to market fast, generate YouTube DevLogs, and acquire real users, **Clibo
 
 ### Phase 3: Text-Only Floating Companion MVP & Production Polish (ACTIVE)
 *Status: [/] In Progress*
-- [ ] **Overlay Input Fixes**: Enable native long-press text selection and pasting in overlay `TextField`.
-- [ ] **Chat Scrolling Physics Fix**: Remove nested `SingleChildScrollView` scroll conflicts inside chat bubbles for smooth list scrolling.
-- [ ] **Cozy UI Model Selector**: Redesign provider & model selection with brand logos (Gemini, Ollama, OpenAI badges), friendly display names, and cozy badges instead of raw technical model strings (`gemini-3.5-flash-lite`).
-- [ ] **UI Refinement & Theme Polish**: Apply finished look across floating overlay and main application screens.
-- [ ] **Code Architecture Refactoring**:
-  - Decouple `main.dart` (extract `CliboRobotOverlay` into a dedicated feature module following SRP).
-  - Eliminate code smells, magic strings, and oversized classes across `clibofe` and `clibobe`.
+- [x] **Overlay Input & Gesture Fixes**: Long-press text paste menu, smooth chat scrolling, soft keyboard avoidance, and safe status bar margins.
+- [x] **Overlay Reading Mode**: Full screen window snapping, electric blue scrollbar, and 60fps VSync marquee ticker with interactive robot avatar toggle.
+- [x] **Cozy UI Model Selector**: Provider cards with brand logos (Gemini, Ollama, OpenAI, Claude), friendly names, BYOK key input, and accordion gateway settings.
+- [x] **Metrics Componentization**: Reusable `UsageMeterCard` with dynamic BYOK/Unlimited emerald progress meter.
+- [x] **Code Refactoring**: Decoupled `main.dart` into `CliboRobotOverlay` (0 errors, 0 warnings).
+- [ ] **Drawer Cleanup & Chat History (NEXT FOCUS)**:
+  - Remove redundant side panel items (API key placeholder cleanup).
+  - Enhance **Chat History & Session Management** tab/drawer view for saving, restoring, and managing previous conversation threads.
 - [ ] **Monetization & App Store Readiness**:
-  - Implement zero-cost BYOK (Bring Your Own Key) + Free Proxy Tier.
+  - Implement zero-cost BYOK + Free Proxy Tier.
   - Non-intrusive ad placement strategy (Main app screen banner) / Pro tier setup.
 
 ### Phase 4: Post-Launch DevLog Episode 1 - Multi-Modal Vision (Post-Launch Update)

@@ -149,6 +149,7 @@ class BackendProxyAIClient implements CliboAIClient {
         .replaceAll(r'\n', '\n')
         .replaceAll(r'\"', '"')
         .replaceAll(r'\u0027', "'")
+        .replaceAll(r'\u0026', "&")
         .replaceAll(r'\\', '\\')
         .trim();
 

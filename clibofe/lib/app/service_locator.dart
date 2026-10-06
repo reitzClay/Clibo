@@ -8,12 +8,14 @@ import '../data/repositories/auth/auth_repository_remote.dart';
 import '../data/repositories/user/user_repository.dart';
 import '../data/repositories/user/user_repository_local.dart';
 import '../data/services/config_service.dart';
+import '../data/services/chat_history_service.dart';
 import '../interface/clibo_aI_client.dart';
 
 final locator = GetIt.instance;
 
 void setupServices() {
   locator.registerLazySingleton<ConfigService>(() => ConfigService());
+  locator.registerLazySingleton<ChatHistoryService>(() => ChatHistoryService());
   locator.registerLazySingleton<ScreenCapturer>(() => AndroidScreenCapturer());
   locator.registerLazySingleton<OverlayController>(() => AndroidOverlayController());
 

@@ -168,13 +168,14 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
       resizeToAvoidBottomInset: true,
       body: Material(
         color: Colors.transparent,
-        child: Center(
+        child: Align(
+          alignment: isMaximized ? Alignment.topCenter : Alignment.center,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeInOut,
             margin: isMaximized
                 ? EdgeInsets.only(
-                    top: topSafeArea + 8.0,
+                    top: topSafeArea + 16.0,
                     bottom: mediaQuery.padding.bottom + 12.0,
                     left: 8.0,
                     right: 8.0,
@@ -183,7 +184,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
             width: isExpanded ? (isMaximized ? screenWidth - 16 : 320) : 70,
             height: isExpanded
                 ? (isMaximized
-                    ? (screenHeight - topSafeArea - mediaQuery.padding.bottom - 20)
+                    ? (screenHeight - topSafeArea - mediaQuery.padding.bottom - 36)
                     : 480)
                 : 70,
             decoration: BoxDecoration(
@@ -244,18 +245,18 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     const SizedBox(height: 2),
-                    if (_isTickerVisible || isMaximized) ...[
+                    if (_isTickerVisible) ...[
                       SizedBox(
                         height: 14,
                         child: _SmoothMarqueeText(
                           key: ValueKey<String>(
-                            isMaximized ? 'reading' : 'tip_$_currentTipIndex',
+                            isMaximized ? 'reading_$_currentTipIndex' : 'tip_$_currentTipIndex',
                           ),
                           text: isMaximized
-                              ? '📖 Full Screen Reading Mode • Drag scrollbar on right to read'
+                              ? '📖 Full Screen Reading Mode • ${_companionTips[_currentTipIndex]}'
                               : _companionTips[_currentTipIndex],
-                          style: TextStyle(
-                            color: isMaximized ? Colors.blueAccent : Colors.greenAccent.withValues(alpha: 0.9),
+                          style: const TextStyle(
+                            color: Colors.white38,
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
                           ),
@@ -263,11 +264,13 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
                       ),
                     ] else ...[
                       Text(
-                        _hasUnreadUpdates ? "✨ Tap 🤖 for What's New & Tips" : "Floating Companion • Tap 🤖 for tips",
+                        isMaximized
+                            ? "📖 Reading Mode • Tap 🤖 for tips"
+                            : (_hasUnreadUpdates ? "✨ Tap 🤖 for What's New & Tips" : "Floating Companion • Tap 🤖 for tips"),
                         style: TextStyle(
-                          color: _hasUnreadUpdates ? Colors.cyanAccent : Colors.white38,
+                          color: _hasUnreadUpdates && !isMaximized ? Colors.cyanAccent : Colors.white38,
                           fontSize: 10,
-                          fontWeight: _hasUnreadUpdates ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: _hasUnreadUpdates && !isMaximized ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
                     ],

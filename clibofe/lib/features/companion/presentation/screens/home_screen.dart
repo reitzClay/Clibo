@@ -1,12 +1,8 @@
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../app/service_locator.dart';
-import '../../../../core/services/capture/screen_capturer.dart';
 import '../../../../data/repositories/auth/auth_repository.dart';
 import '../../../../domain/user/user.dart';
 import '../tabs/config_tab.dart';
@@ -129,11 +125,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ),
       ),
-
       drawer: Drawer(
         backgroundColor: theme.colorScheme.card,
         child: Column(
           children: [
+            // User Profile Header
             Container(
               padding: const EdgeInsets.fromLTRB(16, 64, 16, 24),
               color: theme.colorScheme.primary.withValues(alpha: 0.05),
@@ -143,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ShadAvatar(
                     userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
                     placeholder: Text(userName.isNotEmpty ? userName[0].toUpperCase() : 'U'),
-                    backgroundColor: const Color.fromARGB(50, 45, 23, 255),
+                    backgroundColor: Colors.blueAccent.withValues(alpha: 0.2),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -152,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       children: [
                         Text(
                           userName,
-                          style: theme.textTheme.large,
+                          style: theme.textTheme.large.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           userEmail,
@@ -168,11 +164,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
             ),
 
+            const SizedBox(height: 12),
+
             ListTile(
-              leading: Icon(LucideIcons.layers, color: theme.colorScheme.foreground),
+              leading: const Icon(LucideIcons.layers, color: Colors.blueAccent),
               title: Text(
-                "Toggle Floating Overlay",
-                style: theme.textTheme.p,
+                "Toggle Floating Assistant",
+                style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -181,57 +179,54 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
 
             ListTile(
-              leading: Icon(LucideIcons.activitySquare200, color: theme.colorScheme.foreground),
+              leading: Icon(LucideIcons.messageSquare, color: theme.colorScheme.foreground),
               title: Text(
-                "Enter API key",
+                "Clear Overlay Chat",
+                style: theme.textTheme.p,
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                if (await FlutterOverlayWindow.isActive()) {
+                  await FlutterOverlayWindow.shareData("CLEAR_CHAT");
+                }
+              },
+            ),
+
+            const Divider(indent: 16, endIndent: 16),
+
+            ListTile(
+              leading: Icon(LucideIcons.history, color: theme.colorScheme.foreground),
+              title: Text(
+                "Chat History",
                 style: theme.textTheme.p,
               ),
               onTap: () {
                 Navigator.pop(context);
+                _tabController.animateTo(0);
               },
             ),
 
             ListTile(
-              leading: Icon(LucideIcons.activitySquare200, color: theme.colorScheme.foreground),
+              leading: Icon(LucideIcons.settings, color: theme.colorScheme.foreground),
               title: Text(
-                "New Chat",
+                "AI Provider Config",
                 style: theme.textTheme.p,
               ),
               onTap: () {
                 Navigator.pop(context);
+                _tabController.animateTo(1);
               },
             ),
 
             ListTile(
-              leading: Icon(LucideIcons.activitySquare200, color: theme.colorScheme.foreground),
+              leading: Icon(LucideIcons.activity, color: theme.colorScheme.foreground),
               title: Text(
-                "Search Chat History",
+                "Usage & Metrics",
                 style: theme.textTheme.p,
               ),
               onTap: () {
                 Navigator.pop(context);
-              },
-            ),
-
-            ListTile(
-              leading: Icon(LucideIcons.activitySquare200, color: theme.colorScheme.foreground),
-              title: Text(
-                "Library",
-                style: theme.textTheme.p,
-              ),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-
-            ListTile(
-              leading: Icon(LucideIcons.activitySquare200, color: theme.colorScheme.foreground),
-              title: Text(
-                "Recent",
-                style: theme.textTheme.p,
-              ),
-              onTap: () {
-                Navigator.pop(context);
+                _tabController.animateTo(2);
               },
             ),
 
