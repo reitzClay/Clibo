@@ -6,13 +6,17 @@ import com.claybytes.clibobe.entity.User;
 import com.claybytes.clibobe.service.ChatHistoryService;
 import com.claybytes.clibobe.service.UsageGuardrailService;
 import com.google.genai.Client;
+import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.Part;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -54,6 +58,34 @@ public class GeminiAiService implements AiProviderService {
             String customKey = (request != null) ? request.getByokApiKey() : null;
             Client client = getClient(customKey);
 
+            String userPrompt = (prompt != null && !prompt.isBlank()) ? prompt : "Describe what you see on this screen in detail.";
+            String systemPrefix = "[System: You are Clibo AI Companion, a helpful context-aware assistant developed for ClayBytes (https://claybytes.nl/), powered by Google Gemini.]\n";
+            String fullPrompt = systemPrefix + userPrompt;
+
+            Object contentInput = fullPrompt;
+            ModalityType modality = ModalityType.TEXT_MESSAGE;
+
+            if (request != null && request.getImageBase64() != null && !request.getImageBase64().isBlank()) {
+                modality = ModalityType.SCREENSHOT;
+                try {
+                    byte[] imageBytes = Base64.getDecoder().decode(request.getImageBase64().trim());
+                    String mimeType = (request.getImageMimeType() != null && !request.getImageMimeType().isBlank())
+                            ? request.getImageMimeType()
+                            : "image/jpeg";
+
+                    Part imagePart = Part.fromBytes(imageBytes, mimeType);
+                    Part textPart = Part.fromText(fullPrompt);
+
+                    contentInput = Content.builder()
+                            .parts(List.of(imagePart, textPart))
+                            .build();
+
+                    logger.info("Prepared multi-modal vision request with image payload (length: {} bytes)", imageBytes.length);
+                } catch (Exception imgEx) {
+                    logger.warn("Failed to decode image payload, falling back to text prompt: {}", imgEx.getMessage());
+                }
+            }
+
             String output = null;
             String[] modelsToTry = new String[]{
                 "gemini-3.5-flash-lite",
@@ -66,10 +98,16 @@ public class GeminiAiService implements AiProviderService {
 
             for (String modelName : modelsToTry) {
                 try {
-                    GenerateContentResponse response = client.models.generateContent(modelName, prompt, null);
+                    GenerateContentResponse response;
+                    if (contentInput instanceof Content contentObj) {
+                        response = client.models.generateContent(modelName, contentObj, null);
+                    } else {
+                        response = client.models.generateContent(modelName, fullPrompt, null);
+                    }
+
                     if (response != null && response.text() != null && !response.text().isBlank()) {
                         output = response.text();
-                        logger.info("Successfully generated response using model {}", modelName);
+                        logger.info("Successfully generated multi-modal response using model {}", modelName);
                         break;
                     }
                 } catch (Exception modelEx) {
@@ -78,12 +116,12 @@ public class GeminiAiService implements AiProviderService {
             }
 
             if (output == null || output.isBlank()) {
-                throw new RuntimeException("Gemini generation failed. Please check your Gemini API key in the Config Tab or environment.");
+                throw new RuntimeException("Gemini generation failed. Please check your Gemini API key or image payload.");
             }
 
             try {
-                guardrailService.incrementUserUsage(user, ModalityType.TEXT_MESSAGE);
-                chatHistoryService.logChatInteraction(user, prompt, output);
+                guardrailService.incrementUserUsage(user, modality);
+                chatHistoryService.logChatInteraction(user, userPrompt, output);
             } catch (Exception e) {
                 logger.error("Failed to increment usage or log chat for user {}: {}", user.getEmail(), e.getMessage());
             }

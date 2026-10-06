@@ -1,9 +1,12 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../app/service_locator.dart';
+import '../../../../core/services/capture/screen_capturer.dart';
 import '../../../../data/repositories/auth/auth_repository.dart';
 import '../../../../domain/user/user.dart';
 import '../tabs/config_tab.dart';
@@ -133,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           children: [
             Container(
               padding: const EdgeInsets.fromLTRB(16, 64, 16, 24),
-              color: theme.colorScheme.primary.withOpacity(0.05),
+              color: theme.colorScheme.primary.withValues(alpha: 0.05),
               width: double.infinity,
               child: Row(
                 children: [

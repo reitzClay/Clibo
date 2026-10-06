@@ -31,18 +31,20 @@ Beyond being a standalone product, Clibo serves as the flagship open-portfolio s
 - [x] Verified BYOK API key passing and local network physical device IP retention (`192.168.0.103`).
 - [x] Enhanced SSE error parsing in `BackendProxyAIClient` for clean error rendering.
 
-### Phase 3: Multi-Modal Vision & Screen Intelligence (Up Next)
-*Status: [/] In Progress*
-- [ ] Implement `AndroidScreenCapturer` for on-demand screenshot acquisition.
-- [ ] Transmit image payloads securely through the Spring Boot backend proxy.
-- [ ] Integrate multi-modal AI models (e.g., Gemini 3.5 Flash Lite Vision) to interpret screen contents.
-- [ ] Add quick-action screen analysis triggers ("What's on my screen?", "Summarize this page").
+### Phase 3: Multi-Modal Vision & Image Attachments (Completed)
+*Status: [x] Completed*
+- [x] Built multi-modal image payload pipeline (`imageBase64` + `imageMimeType`) in `BackendProxyAIClient` and Spring Boot `GeminiAiService.java`.
+- [x] Integrated Google Gemini `gemini-3.5-flash-lite` vision analysis for multi-modal text and visual prompts.
+- [x] Updated Android 14+ / targetSDK 36 Foreground Service declarations (`foregroundServiceType="specialUse"`) in `AndroidManifest.xml`.
+- [x] Documented Flutter overlay isolate boundaries: `OverlayService` runs in a background service isolate where plugins requiring `ActivityBinding` (`image_picker`, `MediaProjectionManager`) require activity-context bridging.
+- [x] Integrated manual screenshot and image attachment workflow (`image_picker`) allowing users to attach screenshots and photos directly into the overlay chat.
 
-### Phase 4: Voice & Audio Interactivity
-*Status: [ ] Planned*
-- [ ] Implement audio recording service within the floating overlay.
-- [ ] Support voice note attachments and transcription workflows.
-- [ ] Enable real-time audio interaction and text-to-speech feedback.
+### Phase 4: Voice & Audio Interactivity (Up Next)
+*Status: [/] In Progress*
+- [ ] Extend Inter-Isolate Communication Bridge for audio recording (`RECORD_AUDIO` / `AUDIO_CAPTURED`).
+- [ ] Implement audio recording service in Flutter overlay / main engine.
+- [ ] Transmit `audioBase64` and `audioMimeType` through backend proxy to Gemini multi-modal audio pipeline.
+- [ ] Enable real-time voice notes and text-to-speech audio feedback.
 
 ### Phase 5: Advanced UI/UX, Lottie Animations & Creator Marketplace
 *Status: [ ] Future Vision*

@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -14,6 +18,48 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   setupServices();
+
+  // Permanent top-level listener on Main Application Isolate for Overlay Requests
+  FlutterOverlayWindow.overlayListener.listen((data) async {
+    debugPrint("[MainIsolate] overlayListener event received: $data");
+    if (data is Map && data['action'] == 'PICK_IMAGE') {
+      try {
+        debugPrint("[MainIsolate] Launching ImagePicker.pickImage...");
+        final ImagePicker picker = ImagePicker();
+        final XFile? image = await picker.pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 85,
+          maxWidth: 1920,
+          maxHeight: 1920,
+        );
+
+        if (image != null) {
+          debugPrint("[MainIsolate] Image selected: ${image.path}");
+          final bytes = await image.readAsBytes();
+          final String base64Img = base64Encode(bytes);
+          final String mime = image.mimeType ?? 'image/jpeg';
+          await FlutterOverlayWindow.shareData({
+            'action': 'IMAGE_PICKED',
+            'image': base64Img,
+            'mimeType': mime,
+          });
+          debugPrint("[MainIsolate] Sent IMAGE_PICKED to OverlayIsolate");
+        } else {
+          debugPrint("[MainIsolate] Image picking cancelled by user");
+          await FlutterOverlayWindow.shareData({
+            'action': 'IMAGE_PICK_CANCELLED',
+          });
+        }
+      } catch (e, stack) {
+        debugPrint("[MainIsolate] ImagePicker ERROR: $e\n$stack");
+        await FlutterOverlayWindow.shareData({
+          'action': 'IMAGE_PICK_FAILED',
+          'error': e.toString(),
+        });
+      }
+    }
+  });
+
   runApp(const CliboApp());
 }
 
@@ -49,17 +95,44 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
   ];
   bool _isSending = false;
 
+  Uint8List? _attachedImageBytes;
+  String? _attachedImageMimeType;
+
   @override
   void initState() {
     super.initState();
     FlutterOverlayWindow.overlayListener.listen((data) {
+      debugPrint("[OverlayIsolate] overlayListener received: $data");
       if (data == "CLEAR_CHAT") {
         if (mounted) {
           setState(() {
             _messages.clear();
             _messages.add({'text': 'How can I help you today?', 'isAi': true});
+            _attachedImageBytes = null;
+            _attachedImageMimeType = null;
             isExpanded = false;
             isMaximized = false;
+          });
+        }
+      } else if (data is Map && data['action'] == 'IMAGE_PICKED') {
+        final String base64Img = data['image'] ?? '';
+        final String mime = data['mimeType'] ?? 'image/jpeg';
+        if (base64Img.isNotEmpty) {
+          final bytes = base64Decode(base64Img);
+          if (mounted) {
+            setState(() {
+              _attachedImageBytes = bytes;
+              _attachedImageMimeType = mime;
+            });
+          }
+        }
+      } else if (data is Map && data['action'] == 'IMAGE_PICK_FAILED') {
+        if (mounted) {
+          setState(() {
+            _messages.insert(0, {
+              'text': 'Failed to attach image: ${data['error'] ?? 'Unknown error'}',
+              'isAi': true
+            });
           });
         }
       }
@@ -98,19 +171,59 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
     }
   }
 
-  Future<void> _sendMessage(String text) async {
-    if (text.trim().isEmpty || _isSending) return;
-    final prompt = text.trim();
+  Future<void> _pickImage() async {
+    try {
+      debugPrint("[OverlayIsolate] Calling shareData(PICK_IMAGE)...");
+      await FlutterOverlayWindow.shareData({
+        'action': 'PICK_IMAGE',
+      });
+      debugPrint("[OverlayIsolate] shareData(PICK_IMAGE) sent successfully!");
+    } catch (e) {
+      debugPrint("[OverlayIsolate] _pickImage error: $e");
+      if (mounted) {
+        setState(() {
+          _messages.insert(0, {
+            'text': 'Error requesting image picker: $e',
+            'isAi': true
+          });
+        });
+      }
+    }
+  }
+
+  Future<void> _sendMessage([String? customPrompt]) async {
+    final String rawText = customPrompt ?? _messageController.text;
+    if ((rawText.trim().isEmpty && _attachedImageBytes == null) || _isSending) return;
+    
+    final String prompt = rawText.trim().isNotEmpty
+        ? rawText.trim()
+        : "Describe the attached screenshot or image in detail.";
     _messageController.clear();
 
+    final Uint8List? imageBytes = _attachedImageBytes;
+    final String? mimeType = _attachedImageMimeType;
+
     setState(() {
-      _messages.insert(0, {'text': prompt, 'isAi': false});
+      if (imageBytes != null) {
+        _messages.insert(0, {'text': "🖼️ [Image Attached] $prompt", 'isAi': false});
+      } else {
+        _messages.insert(0, {'text': prompt, 'isAi': false});
+      }
       _isSending = true;
+      _attachedImageBytes = null;
+      _attachedImageMimeType = null;
     });
 
     try {
       final aiClient = locator<CliboAIClient>();
-      final responseText = await aiClient.generateResponse(prompt);
+      final String? base64Img = imageBytes != null ? base64Encode(imageBytes) : null;
+
+      final responseText = await aiClient.generateResponse(
+        prompt,
+        imageBase64: base64Img,
+        imageMimeType: base64Img != null ? (mimeType ?? 'image/jpeg') : null,
+      );
+
       if (mounted) {
         setState(() {
           _messages.insert(0, {'text': responseText, 'isAi': true});
@@ -119,7 +232,10 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _messages.insert(0, {'text': 'Error connecting to backend: ${e.toString().replaceAll('Exception: ', '')}', 'isAi': true});
+          _messages.insert(0, {
+            'text': 'Error connecting to backend: ${e.toString().replaceAll('Exception: ', '')}',
+            'isAi': true
+          });
         });
       }
     } finally {
@@ -130,7 +246,6 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -143,6 +258,8 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
             setState(() {
               _messages.clear();
               _messages.add({'text': 'How can I help you today?', 'isAi': true});
+              _attachedImageBytes = null;
+              _attachedImageMimeType = null;
               isExpanded = false;
               isMaximized = false;
             });
@@ -159,7 +276,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
               border: Border.all(color: Colors.white24, width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
+                  color: Colors.black.withValues(alpha: 0.4),
                   blurRadius: 15,
                   spreadRadius: 2,
                 ),
@@ -204,7 +321,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
                       ),
                       Text(
                           "Always listening...",
-                          style: TextStyle(color: Colors.greenAccent.withOpacity(0.7), fontSize: 10)
+                          style: TextStyle(color: Colors.greenAccent.withValues(alpha: 0.7), fontSize: 10)
                       ),
                     ],
                   ),
@@ -268,9 +385,9 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          _buildActionChip("🔍 What's this?", () => _sendMessage("What's this on my screen?")),
+                          _buildActionChip("🖼️ Attach Screenshot", _pickImage),
+                          _buildActionChip("📝 Summarize Image", () => _sendMessage("Summarize the attached screenshot or document in detail.")),
                           _buildActionChip("💡 Fix settings", () => _sendMessage("How do I fix my settings?")),
-                          _buildActionChip("📝 Read page", () => _sendMessage("Read and summarize this page.")),
                         ],
                       ),
                     ),
@@ -282,7 +399,46 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
           ),
         ),
 
-        // 3. Input Area
+        // 3. Image Attachment Preview Banner (if image is attached)
+        if (_attachedImageBytes != null)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.blueAccent.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.memory(_attachedImageBytes!, width: 32, height: 32, fit: BoxFit.cover),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      "Screenshot Attached",
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _attachedImageBytes = null;
+                      _attachedImageMimeType = null;
+                    });
+                  },
+                  child: const Icon(Icons.close, color: Colors.white70, size: 18),
+                ),
+              ],
+            ),
+          ),
+
+        // 4. Input Area
         Container(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           decoration: const BoxDecoration(
@@ -295,7 +451,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
                   controller: _messageController,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   cursorColor: Colors.white,
-                  onSubmitted: _sendMessage,
+                  onSubmitted: (val) => _sendMessage(val),
                   decoration: InputDecoration(
                     hintText: "Ask Clibo AI...",
                     hintStyle: const TextStyle(color: Colors.white38),
@@ -309,7 +465,9 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
+              _buildCircularButton(Icons.image_rounded, _pickImage, tooltip: "Attach Screenshot / Image"),
+              const SizedBox(width: 6),
               _buildCircularButton(Icons.send, () => _sendMessage(_messageController.text)),
             ],
           ),
@@ -324,7 +482,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white12),
         ),
@@ -336,14 +494,15 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
     );
   }
 
-  Widget _buildCircularButton(IconData icon, VoidCallback onPressed) {
+  Widget _buildCircularButton(IconData icon, VoidCallback onPressed, {String? tooltip}) {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white12,
         shape: BoxShape.circle,
       ),
       child: IconButton(
-        icon: Icon(icon, color: Colors.white, size: 22),
+        icon: Icon(icon, color: Colors.white, size: 20),
+        tooltip: tooltip,
         onPressed: onPressed,
       ),
     );
@@ -384,7 +543,6 @@ class CliboApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Corrected: Initialized standard ShadApp instance configuration wrapper with global ScaffoldMessenger builder
     return ShadApp(
       title: 'Clibo AI Companion',
       debugShowCheckedModeBanner: false,
