@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 import 'package:clibofe/app/service_locator.dart';
@@ -33,7 +32,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
   final List<String> _companionTips = [
     '💡 Pinch with 2 fingers to scroll in compact view',
     '🤖 Clibo Companion • Always here over any app',
-    '💡 Tap "Summarize Clipboard" for instant answers',
+    '💡 Tap "Ask Clibo AI" to start typing',
     '🎭 "Why don’t AI secrets last? Too many parameters!"',
     '💡 Double-tap header to minimize overlay',
     '🚀 Smart, fast & zero context-switching',
@@ -173,7 +172,6 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
     final double screenWidth = mediaQuery.size.width;
     final double screenHeight = mediaQuery.size.height;
 
-    // Generous top safe margin to guarantee clearance below native status bar (16:05, Wi-Fi, Battery)
     final double topSafeArea = mediaQuery.padding.top > 28.0 ? mediaQuery.padding.top : 48.0;
 
     return Scaffold(
@@ -364,47 +362,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
                 final msgIndex = _isSending ? index - 1 : index;
                 final msg = _messages[msgIndex];
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (msgIndex == _messages.length - 1) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          child: Row(
-                            children: [
-                              _buildActionChip("💡 Summarize Clipboard", () async {
-                                final data = await Clipboard.getData(Clipboard.kTextPlain);
-                                if (data?.text != null && data!.text!.isNotEmpty) {
-                                  _sendMessage("Summarize the following text briefly:\n\n${data.text}");
-                                } else {
-                                  _sendMessage("What is in my clipboard?");
-                                }
-                              }),
-                              const SizedBox(width: 6),
-                              _buildActionChip("✍️ Rephrase & Fix", () async {
-                                final data = await Clipboard.getData(Clipboard.kTextPlain);
-                                if (data?.text != null && data!.text!.isNotEmpty) {
-                                  _sendMessage("Rephrase and improve the grammar of this text:\n\n${data.text}");
-                                }
-                              }),
-                              const SizedBox(width: 6),
-                              _buildActionChip("🌐 Translate to English", () async {
-                                final data = await Clipboard.getData(Clipboard.kTextPlain);
-                                if (data?.text != null && data!.text!.isNotEmpty) {
-                                  _sendMessage("Translate the following text to clear, natural English:\n\n${data.text}");
-                                }
-                              }),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                    _buildChatBubble(msg['text'], isAi: msg['isAi'], screenWidth: screenWidth),
-                  ],
-                );
+                return _buildChatBubble(msg['text'], isAi: msg['isAi'], screenWidth: screenWidth);
               },
             ),
           ),
@@ -509,25 +467,6 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildActionChip(String label, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white12),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.87), fontSize: 11, fontWeight: FontWeight.w500),
-        ),
       ),
     );
   }
