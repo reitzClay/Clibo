@@ -186,6 +186,54 @@ class BackendProxyAIClient implements CliboAIClient {
     return cleaned.trim();
   }
 
+  /// Fetches the user's saved chat history from PostgreSQL
+  Future<List<Map<String, dynamic>>?> fetchChatHistory() async {
+    try {
+      final String? token = await _storage.read(key: _keyAuthToken);
+      final response = await http.get(
+        Uri.parse('$backendBaseUrl/ai/history'),
+        headers: {
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> decoded = jsonDecode(response.body);
+        return decoded.cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Clears user's chat history from PostgreSQL
+  Future<bool> clearBackendHistory() async {
+    try {
+      final String? token = await _storage.read(key: _keyAuthToken);
+      final response = await http.delete(
+        Uri.parse('$backendBaseUrl/ai/history'),
+        headers: {
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      );
+      return response.statusCode == 200;
+    } catch (_) {}
+    return false;
+  }
+
+  /// Deletes a specific chat session from PostgreSQL
+  Future<bool> deleteBackendSession(String sessionId) async {
+    try {
+      final String? token = await _storage.read(key: _keyAuthToken);
+      final response = await http.delete(
+        Uri.parse('$backendBaseUrl/ai/history/$sessionId'),
+        headers: {
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      );
+      return response.statusCode == 200;
+    } catch (_) {}
+    return false;
+  }
+
   /// Fetches the user's current metered usage stats (messages, screenshots, voice notes remaining)
   Future<Map<String, dynamic>?> fetchUsageStats() async {
     try {

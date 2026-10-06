@@ -1,8 +1,12 @@
 package com.claybytes.clibobe.controller;
 
 import com.claybytes.clibobe.dto.AiPromptRequest;
+import com.claybytes.clibobe.entity.ChatMessage;
+import com.claybytes.clibobe.entity.ChatSession;
 import com.claybytes.clibobe.entity.ModalityType;
 import com.claybytes.clibobe.entity.User;
+import com.claybytes.clibobe.repository.ChatMessageRepository;
+import com.claybytes.clibobe.repository.ChatSessionRepository;
 import com.claybytes.clibobe.repository.UserRepository;
 import com.claybytes.clibobe.service.UsageGuardrailService;
 import com.claybytes.clibobe.service.UserService;
@@ -11,16 +15,14 @@ import com.claybytes.clibobe.utilityService.GoogleAuthService;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -36,6 +38,8 @@ public class AiProxyController {
     private final Map<String, AiProviderService> providerServiceMap;
     private final UsageGuardrailService guardrailService;
     private final UserRepository userRepository;
+    private final ChatSessionRepository chatSessionRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private final GoogleAuthService googleAuthService;
     private final UserService userService;
     private final Gson gson = new Gson();
@@ -43,12 +47,16 @@ public class AiProxyController {
     public AiProxyController(List<AiProviderService> providerServices,
                              UsageGuardrailService guardrailService,
                              UserRepository userRepository,
+                             ChatSessionRepository chatSessionRepository,
+                             ChatMessageRepository chatMessageRepository,
                              GoogleAuthService googleAuthService,
                              UserService userService) {
         this.providerServiceMap = providerServices.stream()
                 .collect(Collectors.toMap(AiProviderService::getProviderId, Function.identity()));
         this.guardrailService = guardrailService;
         this.userRepository = userRepository;
+        this.chatSessionRepository = chatSessionRepository;
+        this.chatMessageRepository = chatMessageRepository;
         this.googleAuthService = googleAuthService;
         this.userService = userService;
     }
@@ -68,6 +76,85 @@ public class AiProxyController {
 
         User user = userOpt.get();
         return ResponseEntity.ok(guardrailService.getUsageStats(user));
+    }
+
+    @GetMapping("/history")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getChatHistory(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        Optional<User> userOpt = resolveUser(authHeader);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Please sign in to view chat history."));
+        }
+
+        User user = userOpt.get();
+        List<ChatSession> sessions = chatSessionRepository.findByUser(user);
+
+        List<Map<String, Object>> responseList = new ArrayList<>();
+        for (ChatSession session : sessions) {
+            List<ChatMessage> messages = chatMessageRepository.findByChatSession(session);
+            String prompt = session.getTitle();
+            String responseText = "";
+
+            for (ChatMessage msg : messages) {
+                if ("user".equalsIgnoreCase(msg.getRole()) && (prompt == null || prompt.isBlank())) {
+                    prompt = msg.getContent();
+                } else if ("model".equalsIgnoreCase(msg.getRole()) || "assistant".equalsIgnoreCase(msg.getRole())) {
+                    responseText = msg.getContent();
+                }
+            }
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", session.getId().toString());
+            item.put("prompt", prompt != null ? prompt : "Chat Session");
+            item.put("response", responseText);
+            item.put("provider", "Google Gemini");
+            item.put("timestamp", session.getCreatedAt() != null ? session.getCreatedAt().toString() : new Date().toString());
+
+            responseList.add(item);
+        }
+
+        // Sort most recent first
+        Collections.reverse(responseList);
+        return ResponseEntity.ok(responseList);
+    }
+
+    @DeleteMapping("/history")
+    @Transactional
+    public ResponseEntity<?> clearChatHistory(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        Optional<User> userOpt = resolveUser(authHeader);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized"));
+        }
+
+        User user = userOpt.get();
+        List<ChatSession> sessions = chatSessionRepository.findByUser(user);
+        chatSessionRepository.deleteAll(sessions);
+
+        return ResponseEntity.ok(Map.of("message", "Chat history cleared successfully."));
+    }
+
+    @DeleteMapping("/history/{sessionId}")
+    @Transactional
+    public ResponseEntity<?> deleteChatSession(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @PathVariable("sessionId") Long sessionId) {
+
+        Optional<User> userOpt = resolveUser(authHeader);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized"));
+        }
+
+        User user = userOpt.get();
+        Optional<ChatSession> sessionOpt = chatSessionRepository.findById(sessionId);
+        if (sessionOpt.isPresent() && sessionOpt.get().getUser().getId().equals(user.getId())) {
+            chatSessionRepository.delete(sessionOpt.get());
+            return ResponseEntity.ok(Map.of("message", "Session deleted."));
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Session not found"));
     }
 
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

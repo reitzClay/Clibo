@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 import 'package:clibofe/app/service_locator.dart';
+import 'package:clibofe/data/services/chat_history_service.dart';
+import 'package:clibofe/data/services/config_service.dart';
 import 'package:clibofe/interface/clibo_aI_client.dart';
 
 class CliboRobotOverlay extends StatefulWidget {
@@ -130,7 +132,17 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
 
     try {
       final aiClient = locator<CliboAIClient>();
+      final configService = locator<ConfigService>();
+      final historyService = locator<ChatHistoryService>();
+
       final responseText = await aiClient.generateResponse(prompt);
+      final config = await configService.loadConfig();
+
+      await historyService.addSession(
+        prompt: prompt,
+        response: responseText,
+        provider: config.providerType.label,
+      );
 
       if (mounted) {
         setState(() {
@@ -161,7 +173,8 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
     final double screenWidth = mediaQuery.size.width;
     final double screenHeight = mediaQuery.size.height;
 
-    final double topSafeArea = mediaQuery.padding.top > 24.0 ? mediaQuery.padding.top : 36.0;
+    // Generous top safe margin to guarantee clearance below native status bar (16:05, Wi-Fi, Battery)
+    final double topSafeArea = mediaQuery.padding.top > 28.0 ? mediaQuery.padding.top : 48.0;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -175,7 +188,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
             curve: Curves.easeInOut,
             margin: isMaximized
                 ? EdgeInsets.only(
-                    top: topSafeArea + 16.0,
+                    top: topSafeArea + 20.0,
                     bottom: mediaQuery.padding.bottom + 12.0,
                     left: 8.0,
                     right: 8.0,
@@ -184,7 +197,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
             width: isExpanded ? (isMaximized ? screenWidth - 16 : 320) : 70,
             height: isExpanded
                 ? (isMaximized
-                    ? (screenHeight - topSafeArea - mediaQuery.padding.bottom - 36)
+                    ? (screenHeight - topSafeArea - mediaQuery.padding.bottom - 48)
                     : 480)
                 : 70,
             decoration: BoxDecoration(
@@ -258,7 +271,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
                           style: const TextStyle(
                             color: Colors.white38,
                             fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),

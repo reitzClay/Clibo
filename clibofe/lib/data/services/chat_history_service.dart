@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'package:clibofe/app/service_locator.dart';
+import 'package:clibofe/interface/clibo_aI_client.dart';
+
 class ChatSessionItem {
   final String id;
   final String prompt;
@@ -45,13 +48,30 @@ class ChatHistoryService {
 
   Future<List<ChatSessionItem>> loadHistory() async {
     try {
+      final aiClient = locator<CliboAIClient>();
+      if (aiClient is BackendProxyAIClient) {
+        final remoteHistory = await aiClient.fetchChatHistory();
+        if (remoteHistory != null && remoteHistory.isNotEmpty) {
+          final List<ChatSessionItem> remoteSessions =
+              remoteHistory.map((json) => ChatSessionItem.fromJson(json)).toList();
+
+          final encoded = jsonEncode(remoteSessions.map((e) => e.toJson()).toList());
+          await _storage.write(key: _keyHistory, value: encoded);
+          return remoteSessions;
+        }
+      }
+    } catch (e) {
+      debugPrint("[ChatHistoryService] Error syncing with backend: $e");
+    }
+
+    try {
       final jsonString = await _storage.read(key: _keyHistory);
       if (jsonString == null || jsonString.isEmpty) return [];
 
       final List<dynamic> decoded = jsonDecode(jsonString);
       return decoded.map((item) => ChatSessionItem.fromJson(item as Map<String, dynamic>)).toList();
     } catch (e) {
-      debugPrint("[ChatHistoryService] Error loading history: $e");
+      debugPrint("[ChatHistoryService] Error loading local history: $e");
       return [];
     }
   }
@@ -73,7 +93,6 @@ class ChatHistoryService {
 
       currentList.insert(0, newItem);
 
-      // Keep up to 100 recent sessions in local history
       if (currentList.length > 100) {
         currentList.removeRange(100, currentList.length);
       }
@@ -87,6 +106,11 @@ class ChatHistoryService {
 
   Future<void> deleteSession(String id) async {
     try {
+      final aiClient = locator<CliboAIClient>();
+      if (aiClient is BackendProxyAIClient) {
+        await aiClient.deleteBackendSession(id);
+      }
+
       final currentList = await loadHistory();
       currentList.removeWhere((item) => item.id == id);
       final encoded = jsonEncode(currentList.map((e) => e.toJson()).toList());
@@ -98,6 +122,10 @@ class ChatHistoryService {
 
   Future<void> clearHistory() async {
     try {
+      final aiClient = locator<CliboAIClient>();
+      if (aiClient is BackendProxyAIClient) {
+        await aiClient.clearBackendHistory();
+      }
       await _storage.delete(key: _keyHistory);
     } catch (e) {
       debugPrint("[ChatHistoryService] Error clearing history: $e");
