@@ -136,11 +136,47 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               width: double.infinity,
               child: Row(
                 children: [
-                  ShadAvatar(
-                    userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                    placeholder: Text(userName.isNotEmpty ? userName[0].toUpperCase() : 'U'),
-                    backgroundColor: Colors.blueAccent.withValues(alpha: 0.2),
-                  ),
+                  if (_currentUser?.pictureUrl != null && _currentUser!.pictureUrl!.isNotEmpty)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(100),
+                      child: Image.network(
+                        _currentUser!.pictureUrl!,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return ShadAvatar(
+                            userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                            placeholder: Text(userName.isNotEmpty ? userName[0].toUpperCase() : 'U'),
+                            backgroundColor: Colors.blueAccent.withValues(alpha: 0.2),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blueAccent),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  else
+                    ShadAvatar(
+                      userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                      placeholder: Text(userName.isNotEmpty ? userName[0].toUpperCase() : 'U'),
+                      backgroundColor: Colors.blueAccent.withValues(alpha: 0.2),
+                    ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(

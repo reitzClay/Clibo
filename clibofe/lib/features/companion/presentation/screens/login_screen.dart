@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -159,38 +160,40 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // 3. Google Sign-In Button
               const GoogleSignInButton(),
-              const SizedBox(height: 16),
 
-              // 4. Developer Test Login Button (Bypass)
-              OutlinedButton(
-                onPressed: _isDevLoading ? null : _handleDevTestLogin,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  side: BorderSide(color: Colors.greenAccent.shade400, width: 1.5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: _isDevLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.greenAccent),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.flash_on, color: Colors.greenAccent, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            "🚀 Dev Test Login (Bypass)",
-                            style: TextStyle(
-                              color: Colors.greenAccent.shade400,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+              if (kDebugMode) ...[
+                const SizedBox(height: 16),
+                // 4. Developer Test Login Button (Bypass)
+                OutlinedButton(
+                  onPressed: _isDevLoading ? null : _handleDevTestLogin,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    side: BorderSide(color: Colors.greenAccent.shade400, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: _isDevLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.greenAccent),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.flash_on, color: Colors.greenAccent, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              "🚀 Dev Test Login (Bypass)",
+                              style: TextStyle(
+                                color: Colors.greenAccent.shade400,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-              ),
+                          ],
+                        ),
+                ),
+              ],
 
               /*
               // 5. Company Login & Registration Buttons (Retained for future B2B/Company feature expansion)

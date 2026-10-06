@@ -73,6 +73,7 @@ class AuthRepositoryDev implements AuthRepository {
       id: 999,
       email: 'dev@clibo.ai',
       name: 'Developer Tester',
+      pictureUrl: 'https://api.dicebear.com/7.x/bottts/png?seed=CliboDev',
       userTier: 'PRO',
       systemRole: 'ADMIN',
       token: 'dev_mock_token_999',

@@ -171,6 +171,10 @@ class AuthRepositoryRemote implements AuthRepository {
       }
 
       _currentUser = await _verifyGoogleTokenWithBackend(idToken);
+      if (_currentUser != null && (_currentUser!.pictureUrl == null || _currentUser!.pictureUrl!.isEmpty) && account.photoUrl != null) {
+        _currentUser = _currentUser!.copyWith(pictureUrl: account.photoUrl);
+        await _saveUserSession(_currentUser!, idToken);
+      }
       return _currentUser;
     } catch (e) {
       debugPrint("Google Sign-In Error: $e");
@@ -216,6 +220,7 @@ class AuthRepositoryRemote implements AuthRepository {
       id: 999,
       email: 'dev@clibo.ai',
       name: 'Developer Tester',
+      pictureUrl: 'https://api.dicebear.com/7.x/bottts/png?seed=CliboDev',
       userTier: 'PRO',
       systemRole: 'ADMIN',
       token: 'dev_mock_token_999',

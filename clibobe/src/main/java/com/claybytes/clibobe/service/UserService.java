@@ -19,20 +19,31 @@ public class UserService {
 
     @Transactional
     public User processUserLogin(String email, String name) {
+        return processUserLogin(email, name, null);
+    }
+
+    @Transactional
+    public User processUserLogin(String email, String name, String pictureUrl) {
         User user = userRepository.findByEmail(email)
                 .map(existingUser -> {
+                    boolean updated = false;
+                    if (pictureUrl != null && !pictureUrl.isBlank() && !pictureUrl.equals(existingUser.getPictureUrl())) {
+                        existingUser.setPictureUrl(pictureUrl);
+                        updated = true;
+                    }
                     if (existingUser.getOrganization() == null && email.contains("@")) {
                         String domain = email.substring(email.indexOf("@") + 1).trim();
                         organizationRepository.findByDomainRestriction(domain)
                                 .ifPresent(existingUser::setOrganization);
-                        return userRepository.save(existingUser);
+                        updated = true;
                     }
-                    return existingUser;
+                    return updated ? userRepository.save(existingUser) : existingUser;
                 })
                 .orElseGet(() -> {
                     User newUser = new User();
                     newUser.setEmail(email);
                     newUser.setName(name);
+                    newUser.setPictureUrl(pictureUrl);
                     newUser.setUserTier("FREE");
                     newUser.setSystemRole("USER");
 
