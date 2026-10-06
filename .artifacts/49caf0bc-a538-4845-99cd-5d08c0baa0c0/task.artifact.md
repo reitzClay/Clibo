@@ -28,13 +28,19 @@
   - `[x]` Clean up `main.dart` to strictly handle app initialization (~50 lines).
   - `[x]` Convert relative imports to package imports and resolve all compiler warnings/errors (0 errors, 0 warnings).
 
-- `[/]` **6. Navigation Drawer Cleanup & Chat History Feature (NEXT FOCUS)**
-  - `[ ]` Remove redundant side panel items (such as the redundant API key placeholder in `HomeScreen` drawer).
-  - `[ ]` Build out **Chat History & Session Management**:
+- `[x]` **6. Navigation Drawer Cleanup & Chat History Feature**
+  - `[x]` Remove redundant side panel items (such as the redundant API key placeholder in `HomeScreen` drawer).
+  - `[x]` Build out **Chat History & Session Management**:
     - Display past chat sessions fetched from Spring Boot / local storage.
     - Enable viewing, searching, and restoring previous chat conversations in overlay / main app.
     - Clear chat history and handle session deletion.
 
-- `[ ]` **7. Production Build & Monetization Setup**
+- `[/]` **7. Analytics, A/B Testing & Remote Config Setup (ACTIVE FOCUS)**
+  - `[ ]` Add `firebase_analytics`, `firebase_remote_config`, and `firebase_crashlytics` to `clibofe/pubspec.yaml`.
+  - `[ ]` Configure Firebase Analytics service / event logging (prompt sent, model switched, overlay opened, BYOK toggled).
+  - `[ ]` Configure Firebase Remote Config for dynamic quota limits, feature flags, and A/B testing parameters.
+  - `[ ]` Wire Remote Config values into `UsageGuardrailService` / `ConfigService`.
+
+- `[ ]` **8. Production Build & Monetization Setup**
   - `[ ]` Finalize monetization strategy (BYOK + Free Proxy Tier + Optional Main App Ad Banner).
   - `[ ]` Production app bundle build preparation and store assets check.

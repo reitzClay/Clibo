@@ -1,10 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'firebase_options.dart';
 
 import 'app/service_locator.dart';
+import 'data/services/remote_config_service.dart';
 import 'features/companion/presentation/screens/splash_screen.dart';
 import 'features/companion/presentation/widgets/overlay/clibo_robot_overlay.dart';
 
@@ -14,6 +17,19 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   setupServices();
+
+  // Pass uncaught Flutter framework errors to Crashlytics
+  FlutterError.onError = (errorDetails) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  };
+  // Pass uncaught asynchronous errors to Crashlytics
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
+  // Initialize Remote Config & A/B testing fallbacks
+  await locator<RemoteConfigService>().initialize();
 
   // Top-level listener on Main Application Isolate for Overlay Requests
   FlutterOverlayWindow.overlayListener.listen((data) {

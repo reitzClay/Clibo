@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import 'package:clibofe/app/service_locator.dart';
+import 'package:clibofe/data/services/analytics_service.dart';
 import 'package:clibofe/data/services/config_service.dart';
 import 'package:clibofe/domain/config/ai_provider_config.dart';
 import 'package:clibofe/interface/clibo_aI_client.dart';
@@ -101,6 +102,12 @@ class _ConfigTabState extends State<ConfigTab> {
     );
 
     await _configService.saveConfig(updatedConfig);
+
+    final analytics = locator<AnalyticsService>();
+    analytics.logModelChanged(newProvider: _selectedProvider.label);
+    if (_byokKeyController.text.trim().isNotEmpty) {
+      analytics.logBYOKSaved(provider: _selectedProvider.label);
+    }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

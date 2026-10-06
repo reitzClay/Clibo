@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 import 'package:clibofe/app/service_locator.dart';
+import 'package:clibofe/data/services/analytics_service.dart';
 import 'package:clibofe/data/services/chat_history_service.dart';
 import 'package:clibofe/data/services/config_service.dart';
 import 'package:clibofe/interface/clibo_aI_client.dart';
@@ -30,12 +31,14 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
   bool _hasUnreadUpdates = true;
 
   final List<String> _companionTips = [
-    '💡 Pinch with 2 fingers to scroll in compact view',
+    '💡 Double-tap robot icon to close chat',
     '🤖 Clibo Companion • Always here over any app',
+    '💡 Pinch with 2 fingers to scroll in compact view',
     '💡 Tap "Ask Clibo AI" to start typing',
     '🎭 "Why don’t AI secrets last? Too many parameters!"',
-    '💡 Double-tap header to minimize overlay',
     '🚀 Smart, fast & zero context-switching',
+    '🔍 Think it is a scam, then paste the chat into the Clibo',
+    '🔍 You could also find out if she/he is cheating, then paste the chat into the Clibo',
   ];
   int _currentTipIndex = 0;
   Timer? _tickerTimer;
@@ -95,6 +98,8 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
       }
     });
 
+    locator<AnalyticsService>().logOverlayToggled(isOpen: isExpanded);
+
     if (isExpanded) {
       await FlutterOverlayWindow.resizeOverlay(340, 500, true);
       await FlutterOverlayWindow.updateFlag(OverlayFlag.focusPointer);
@@ -133,9 +138,16 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
       final aiClient = locator<CliboAIClient>();
       final configService = locator<ConfigService>();
       final historyService = locator<ChatHistoryService>();
+      final analytics = locator<AnalyticsService>();
 
       final responseText = await aiClient.generateResponse(prompt);
       final config = await configService.loadConfig();
+
+      analytics.logPromptSent(
+        provider: config.providerType.label,
+        isBYOK: config.isBYOK,
+        promptLength: prompt.length,
+      );
 
       await historyService.addSession(
         prompt: prompt,
@@ -149,6 +161,10 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
         });
       }
     } catch (e) {
+      locator<AnalyticsService>().logError(
+        context: 'overlay_send_message',
+        errorMessage: e.toString(),
+      );
       if (mounted) {
         setState(() {
           _messages.insert(0, {
@@ -172,7 +188,8 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
     final double screenWidth = mediaQuery.size.width;
     final double screenHeight = mediaQuery.size.height;
 
-    final double topSafeArea = mediaQuery.padding.top > 28.0 ? mediaQuery.padding.top : 48.0;
+    // Generous top clearance ensuring status bar clock, notch & battery icons never overlap
+    final double topSafeArea = mediaQuery.padding.top > 36.0 ? mediaQuery.padding.top : 68.0;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -186,7 +203,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
             curve: Curves.easeInOut,
             margin: isMaximized
                 ? EdgeInsets.only(
-                    top: topSafeArea + 20.0,
+                    top: topSafeArea + 28.0,
                     bottom: mediaQuery.padding.bottom + 12.0,
                     left: 8.0,
                     right: 8.0,
@@ -195,7 +212,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
             width: isExpanded ? (isMaximized ? screenWidth - 16 : 320) : 70,
             height: isExpanded
                 ? (isMaximized
-                    ? (screenHeight - topSafeArea - mediaQuery.padding.bottom - 48)
+                    ? (screenHeight - topSafeArea - mediaQuery.padding.bottom - 56)
                     : 480)
                 : 70,
             decoration: BoxDecoration(
@@ -238,82 +255,92 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
     return Column(
       children: [
         // 1. Header Bar with Glowing Robot Avatar & Interactive Smooth Marquee Ticker
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.white12)),
-          ),
-          child: Row(
-            children: [
-              _buildRobotAvatar(),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Clibo AI",
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                    ),
-                    const SizedBox(height: 2),
-                    if (_isTickerVisible) ...[
-                      SizedBox(
-                        height: 14,
-                        child: _SmoothMarqueeText(
-                          key: ValueKey<String>(
-                            isMaximized ? 'reading_$_currentTipIndex' : 'tip_$_currentTipIndex',
-                          ),
-                          text: isMaximized
-                              ? '📖 Full Screen Reading Mode • ${_companionTips[_currentTipIndex]}'
-                              : _companionTips[_currentTipIndex],
-                          style: const TextStyle(
-                            color: Colors.white38,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+        GestureDetector(
+          onDoubleTap: _toggleExpansion,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: const EdgeInsets.only(top: 14, bottom: 10, left: 12, right: 12),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Colors.white12)),
+            ),
+            child: Row(
+              children: [
+                _buildRobotAvatar(),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Clibo AI",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                       ),
-                    ] else ...[
-                      Text(
-                        isMaximized
-                            ? "📖 Reading Mode • Tap 🤖 for tips"
-                            : (_hasUnreadUpdates ? "✨ Tap 🤖 for What's New & Tips" : "Floating Companion • Tap 🤖 for tips"),
-                        style: TextStyle(
-                          color: _hasUnreadUpdates && !isMaximized ? Colors.cyanAccent : Colors.white38,
-                          fontSize: 10,
-                          fontWeight: _hasUnreadUpdates && !isMaximized ? FontWeight.bold : FontWeight.normal,
+                      const SizedBox(height: 2),
+                      if (_isTickerVisible) ...[
+                        SizedBox(
+                          height: 14,
+                          child: _SmoothMarqueeText(
+                            key: ValueKey<String>(
+                              isMaximized ? 'reading_$_currentTipIndex' : 'tip_$_currentTipIndex',
+                            ),
+                            text: isMaximized
+                                ? '📖 Full Screen Reading Mode • ${_companionTips[_currentTipIndex]}'
+                                : _companionTips[_currentTipIndex],
+                            style: const TextStyle(
+                              color: Colors.white38,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
+                      ] else ...[
+                        Text(
+                          isMaximized
+                              ? "📖 Reading Mode • Tap 🤖 for tips"
+                              : (_hasUnreadUpdates ? "✨ Tap 🤖 for What's New & Tips" : "Floating Companion • Tap 🤖 for tips"),
+                          style: TextStyle(
+                            color: _hasUnreadUpdates && !isMaximized ? Colors.cyanAccent : Colors.white38,
+                            fontSize: 10,
+                            fontWeight: _hasUnreadUpdates && !isMaximized ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                        padding: EdgeInsets.zero,
+                        icon: Icon(
+                          isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
+                          color: isMaximized ? Colors.blueAccent : Colors.white,
+                          size: 18,
+                        ),
+                        onPressed: _toggleMaximize,
+                        tooltip: isMaximized ? "Restore Floating Card" : "Snap to Full Screen",
+                      ),
+                      Container(width: 1, height: 16, color: Colors.white24),
+                      IconButton(
+                        constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                        padding: EdgeInsets.zero,
+                        icon: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
+                        onPressed: _toggleExpansion,
+                        tooltip: "Minimize Overlay",
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-                    icon: Icon(
-                      isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
-                      color: isMaximized ? Colors.blueAccent : Colors.white70,
-                      size: 20,
-                    ),
-                    onPressed: _toggleMaximize,
-                    tooltip: isMaximized ? "Restore Floating Card" : "Snap to Full Screen",
-                  ),
-                  const SizedBox(width: 6),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-                    icon: const Icon(Icons.close, color: Colors.white70, size: 18),
-                    onPressed: _toggleExpansion,
-                    tooltip: "Minimize Overlay",
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
 

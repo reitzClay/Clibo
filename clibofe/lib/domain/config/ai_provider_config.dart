@@ -37,6 +37,8 @@ class AiProviderConfig {
     this.customModel = 'local-model',
   });
 
+  bool get isBYOK => byokApiKey.trim().isNotEmpty;
+
   factory AiProviderConfig.fromJson(Map<String, dynamic> json, {required String defaultBackendUrl}) {
     return AiProviderConfig(
       providerType: AiProviderType.fromId(json['aiProvider']?.toString()),

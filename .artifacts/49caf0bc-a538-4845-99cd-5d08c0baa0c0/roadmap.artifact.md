@@ -30,9 +30,13 @@ To get to market fast, generate YouTube DevLogs, and acquire real users, **Clibo
 - [x] **Cozy UI Model Selector**: Provider cards with brand logos (Gemini, Ollama, OpenAI, Claude), friendly names, BYOK key input, and accordion gateway settings.
 - [x] **Metrics Componentization**: Reusable `UsageMeterCard` with dynamic BYOK/Unlimited emerald progress meter.
 - [x] **Code Refactoring**: Decoupled `main.dart` into `CliboRobotOverlay` (0 errors, 0 warnings).
-- [ ] **Drawer Cleanup & Chat History (NEXT FOCUS)**:
+- [x] **Drawer Cleanup & Chat History**:
   - Remove redundant side panel items (API key placeholder cleanup).
   - Enhance **Chat History & Session Management** tab/drawer view for saving, restoring, and managing previous conversation threads.
+- [ ] **Analytics, A/B Testing & Remote Config (ACTIVE FOCUS)**:
+  - Add `firebase_analytics`, `firebase_remote_config`, and `firebase_crashlytics` dependencies.
+  - Implement analytics tracking for core user interactions and overlay actions.
+  - Set up dynamic Remote Config feature flags and A/B testing parameters (quota limits, experiment flags).
 - [ ] **Monetization & App Store Readiness**:
   - Implement zero-cost BYOK + Free Proxy Tier.
   - Non-intrusive ad placement strategy (Main app screen banner) / Pro tier setup.
