@@ -1,13 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 1. SYSTEM PERMISSIONS REQUIRED FOR OVERLAYS AND BACKGROUND SERVICES -->
-    <!-- Allows Clibo AI to draw and display its Lottie UI over other running applications -->
+    <!-- 1. SYSTEM PERMISSIONS REQUIRED FOR OVERLAYS, SCREEN CAPTURE AND BACKGROUND SERVICES -->
+    <!-- Allows Clibo AI to draw and display its UI over other running applications -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- Required to keep the overlay engine active when the main app process is closed or minimized -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-
-    <!-- Compliance permission required for modern Android versions executing specialized background tasks -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <application
@@ -35,7 +34,6 @@
         </activity>
 
         <!-- 2. NATIVE SERVICE DECLARATION FOR THE OVERLAY WINDOW PLUGIN -->
-        <!-- This registers the background process instance that renders your separate Flutter overlay isolate engine -->
         <service
             android:name="flutter.overlay.window.flutter_overlay_window.OverlayService"
             android:exported="false"

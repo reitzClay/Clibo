@@ -5,15 +5,20 @@ import '../screens/home_screen.dart';
 
 class GoogleSignInButton extends StatefulWidget {
   final VoidCallback? onSuccess;
-  const GoogleSignInButton({super.key, this.onSuccess});
+  final VoidCallback? onConsentRequired;
+  const GoogleSignInButton({super.key, this.onSuccess, this.onConsentRequired});
 
   @override
-  State<GoogleSignInButton> createState() => _GoogleSignInButtonState();
+  State<GoogleSignInButton> createState() => GoogleSignInButtonState();
 }
 
-class _GoogleSignInButtonState extends State<GoogleSignInButton> {
+class GoogleSignInButtonState extends State<GoogleSignInButton> {
   final AuthRepository _authRepository = locator<AuthRepository>();
   bool _isLoading = false;
+
+  Future<void> triggerSignIn() async {
+    await _handleGoogleSignIn();
+  }
 
   Future<void> _handleGoogleSignIn() async {
     setState(() {
@@ -65,7 +70,15 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
         elevation: 0,
       ),
-      onPressed: _isLoading ? null : _handleGoogleSignIn,
+      onPressed: _isLoading
+          ? null
+          : () {
+              if (widget.onConsentRequired != null) {
+                widget.onConsentRequired!();
+              } else {
+                _handleGoogleSignIn();
+              }
+            },
       child: _isLoading
           ? const SizedBox(
               height: 20,

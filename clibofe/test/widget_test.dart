@@ -18,10 +18,22 @@ class MockAuthRepository implements AuthRepository {
   Future<User?> signInWithGoogle() async => null;
 
   @override
+  Future<Map<String, dynamic>> registerOrganization({
+    required String name,
+    required String domain,
+    required String planTier,
+    required String adminEmail,
+    required String adminName,
+  }) async => {};
+
+  @override
   Future<User?> signUpWithEmail(String email, String password) async => null;
 
   @override
   Future<bool> trySilentSignIn() async => false;
+
+  @override
+  Future<void> logConsent(String policyVersion) async {}
 
   @override
   Future<User?> signInAsDevTestUser() async => const User(

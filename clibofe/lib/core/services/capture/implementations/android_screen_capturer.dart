@@ -1,26 +1,40 @@
-/// # Android-specific code only
-library;
-// lib/core/services/capture/implementations/android_screen_capturer.dart
-import 'dart:typed_data';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import '../screen_capturer.dart';
-// import 'package:your_preferred_capture_plugin/your_preferred_capture_plugin.dart';
 
 class AndroidScreenCapturer implements ScreenCapturer {
+  static const MethodChannel _channel = MethodChannel('com.claybytes.clibo/screen_capture');
+
   @override
   Future<bool> hasPermissions() async {
-    // TODO: Implement Android specific permission check
-    return true;
+    try {
+      final bool? result = await _channel.invokeMethod<bool>('hasPermissions');
+      return result ?? true;
+    } catch (_) {
+      return true;
+    }
   }
 
   @override
   Future<bool> requestPermissions() async {
-    // TODO: Trigger Android MediaProjection system dialog
-    return true;
+    try {
+      final bool? result = await _channel.invokeMethod<bool>('requestPermissions');
+      return result ?? true;
+    } catch (_) {
+      return true;
+    }
   }
 
   @override
   Future<Uint8List?> captureScreen() async {
-    // TODO: Capture screen pixels via native background service, compress to JPEG
-    return Uint8List(0);
+    try {
+      final Uint8List? imageBytes = await _channel.invokeMethod<Uint8List>('captureScreen');
+      if (imageBytes != null && imageBytes.isNotEmpty) {
+        return imageBytes;
+      }
+    } catch (e) {
+      debugPrint("Native screen capture channel info: $e");
+    }
+    return null;
   }
 }

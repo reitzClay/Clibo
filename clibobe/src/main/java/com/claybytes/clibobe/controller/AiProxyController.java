@@ -119,10 +119,12 @@ public class AiProxyController {
 
     private Optional<User> resolveUser(String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
+            String token = authHeader.substring(7).trim();
             if (token.startsWith("dev_mock_token_")) {
                 return userRepository.findByEmail("dev@clibo.ai").or(() -> userRepository.findAll().stream().findFirst());
             }
+
+            // 1. Verify via Google OAuth
             try {
                 com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload payload = googleAuthService.verifyToken(token);
                 if (payload != null && payload.getEmail() != null) {
@@ -130,8 +132,25 @@ public class AiProxyController {
                     String name = payload.get("name") != null ? payload.get("name").toString() : email.split("@")[0];
                     return Optional.of(userService.processUserLogin(email, name));
                 }
-            } catch (Exception e) {
-                logger.warn("Failed to resolve user from token: {}", e.getMessage());
+            } catch (Exception ignored) {
+            }
+
+            // 2. Fallback check by email (for company/email login)
+            if (token.contains("@")) {
+                Optional<User> userOpt = userRepository.findByEmail(token);
+                if (userOpt.isPresent()) {
+                    return userOpt;
+                }
+            }
+
+            // 3. Fallback check by ID
+            try {
+                Long id = Long.parseLong(token);
+                Optional<User> userOpt = userRepository.findById(id);
+                if (userOpt.isPresent()) {
+                    return userOpt;
+                }
+            } catch (NumberFormatException ignored) {
             }
         }
         return Optional.empty();

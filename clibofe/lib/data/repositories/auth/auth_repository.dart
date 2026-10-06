@@ -30,4 +30,7 @@ abstract class AuthRepository {
 
   /// Instant developer login to bypass network/OAuth during development
   Future<User?> signInAsDevTestUser();
+
+  /// Logs user consent for Terms of Service and Privacy Policy
+  Future<void> logConsent(String policyVersion);
 }

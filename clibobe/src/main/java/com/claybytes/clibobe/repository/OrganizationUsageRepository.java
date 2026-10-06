@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface OrganizationUsageRepository extends JpaRepository<OrganizationUsage, Long> {
     Optional<OrganizationUsage> findByOrganization(Organization organization);
+    Optional<OrganizationUsage> findByOrganizationId(Long organizationId);
 }

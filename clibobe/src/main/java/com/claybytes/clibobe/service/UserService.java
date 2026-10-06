@@ -19,7 +19,7 @@ public class UserService {
 
     @Transactional
     public User processUserLogin(String email, String name) {
-        return userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .map(existingUser -> {
                     if (existingUser.getOrganization() == null && email.contains("@")) {
                         String domain = email.substring(email.indexOf("@") + 1).trim();
@@ -44,5 +44,11 @@ public class UserService {
 
                     return userRepository.save(newUser);
                 });
+
+        if (user.getOrganization() != null) {
+            user.getOrganization().getName();
+        }
+
+        return user;
     }
 }
