@@ -174,11 +174,29 @@ class _HistoryTabState extends State<HistoryTab> with WidgetsBindingObserver {
     }
   }
 
+  String _getProviderAssetFromLabel(String providerLabel) {
+    final lower = providerLabel.toLowerCase();
+    if (lower.contains('gemini')) return 'assets/images/gemini.png';
+    if (lower.contains('ollama')) return 'assets/images/ollama.png';
+    if (lower.contains('openai')) return 'assets/images/openai.png';
+    if (lower.contains('claude') || lower.contains('anthropic')) return 'assets/images/claude.png';
+    return 'assets/images/custom.png';
+  }
+
+  String _getProviderFallbackIconFromLabel(String providerLabel) {
+    final lower = providerLabel.toLowerCase();
+    if (lower.contains('gemini')) return '✨';
+    if (lower.contains('ollama')) return '🦙';
+    if (lower.contains('openai')) return '🧠';
+    if (lower.contains('claude') || lower.contains('anthropic')) return '🎭';
+    return '⚙️';
+  }
+
   void _showSessionDetailSheet(ChatSessionItem session) {
     final StringBuffer fullCopyText = StringBuffer();
     for (int i = 0; i < session.messages.length; i++) {
       fullCopyText.writeln("User: ${session.messages[i].prompt}");
-      fullCopyText.writeln("AI (${session.provider}): ${session.messages[i].response}\n");
+      fullCopyText.writeln("AI (${session.messages[i].provider}): ${session.messages[i].response}\n");
     }
 
     showModalBottomSheet(
@@ -203,7 +221,16 @@ class _HistoryTabState extends State<HistoryTab> with WidgetsBindingObserver {
                   Expanded(
                     child: Row(
                       children: [
-                        Text(session.provider.contains('Ollama') ? '🦙' : '✨', style: const TextStyle(fontSize: 20)),
+                        Image.asset(
+                          _getProviderAssetFromLabel(session.activeProvider),
+                          width: 22,
+                          height: 22,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Text(
+                            _getProviderFallbackIconFromLabel(session.activeProvider),
+                            style: const TextStyle(fontSize: 20),
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -279,7 +306,7 @@ class _HistoryTabState extends State<HistoryTab> with WidgetsBindingObserver {
                             children: [
                               const Icon(Icons.smart_toy_outlined, size: 14, color: Colors.greenAccent),
                               const SizedBox(width: 6),
-                              Text("Clibo (${session.provider})", style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                              Text("Clibo (${msg.provider})", style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 12)),
                             ],
                           ),
                           const SizedBox(height: 4),
@@ -464,7 +491,16 @@ class _HistoryTabState extends State<HistoryTab> with WidgetsBindingObserver {
                               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                               leading: CircleAvatar(
                                 backgroundColor: Colors.blueAccent.withValues(alpha: 0.15),
-                                child: Text(session.provider.contains('Ollama') ? '🦙' : '✨', style: const TextStyle(fontSize: 18)),
+                                child: Image.asset(
+                                  _getProviderAssetFromLabel(session.activeProvider),
+                                  width: 22,
+                                  height: 22,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => Text(
+                                    _getProviderFallbackIconFromLabel(session.activeProvider),
+                                    style: const TextStyle(fontSize: 18),
+                                  ),
+                                ),
                               ),
                               title: Row(
                                 children: [

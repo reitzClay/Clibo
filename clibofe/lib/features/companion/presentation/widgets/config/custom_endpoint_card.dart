@@ -20,7 +20,19 @@ class CustomEndpointCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Custom Endpoint Base URL", style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold)),
+        Row(
+          children: [
+            Image.asset(
+              'assets/images/custom.png',
+              width: 20,
+              height: 20,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Text('⚙️', style: TextStyle(fontSize: 18)),
+            ),
+            const SizedBox(width: 8),
+            Text("Custom Endpoint Base URL", style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold)),
+          ],
+        ),
         const SizedBox(height: 4),
         Text("e.g. http://10.0.2.2:1234/v1 or https://api.together.xyz/v1", style: theme.textTheme.small),
         const SizedBox(height: 8),

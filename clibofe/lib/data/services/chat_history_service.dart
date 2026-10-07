@@ -8,23 +8,27 @@ import 'package:clibofe/interface/clibo_aI_client.dart';
 class ChatMessagePair {
   final String prompt;
   final String response;
+  final String provider;
   final DateTime timestamp;
 
   ChatMessagePair({
     required this.prompt,
     required this.response,
+    required this.provider,
     required this.timestamp,
   });
 
   Map<String, dynamic> toJson() => {
         'prompt': prompt,
         'response': response,
+        'provider': provider,
         'timestamp': timestamp.toIso8601String(),
       };
 
-  factory ChatMessagePair.fromJson(Map<String, dynamic> json) => ChatMessagePair(
+  factory ChatMessagePair.fromJson(Map<String, dynamic> json, {String? defaultProvider}) => ChatMessagePair(
         prompt: json['prompt']?.toString() ?? '',
         response: json['response']?.toString() ?? '',
+        provider: json['provider']?.toString() ?? defaultProvider ?? 'Google Gemini',
         timestamp: json['timestamp'] != null
             ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()
             : DateTime.now(),
@@ -48,6 +52,7 @@ class ChatSessionItem {
 
   String get lastPrompt => messages.isNotEmpty ? messages.last.prompt : title;
   String get lastResponse => messages.isNotEmpty ? messages.last.response : '';
+  String get activeProvider => messages.isNotEmpty ? messages.last.provider : provider;
   int get messageCount => messages.length;
 
   Map<String, dynamic> toJson() => {
@@ -59,15 +64,18 @@ class ChatSessionItem {
       };
 
   factory ChatSessionItem.fromJson(Map<String, dynamic> json) {
+    final String sessionProvider = json['provider']?.toString() ?? 'Google Gemini';
+
     List<ChatMessagePair> msgs = [];
     if (json['messages'] is List) {
       msgs = (json['messages'] as List)
-          .map((m) => ChatMessagePair.fromJson(m as Map<String, dynamic>))
+          .map((m) => ChatMessagePair.fromJson(m as Map<String, dynamic>, defaultProvider: sessionProvider))
           .toList();
     } else if (json['prompt'] != null || json['response'] != null) {
       msgs.add(ChatMessagePair(
         prompt: json['prompt']?.toString() ?? '',
         response: json['response']?.toString() ?? '',
+        provider: sessionProvider,
         timestamp: json['timestamp'] != null
             ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()
             : DateTime.now(),
@@ -80,7 +88,7 @@ class ChatSessionItem {
     return ChatSessionItem(
       id: json['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
       title: titleStr,
-      provider: json['provider']?.toString() ?? 'Gemini',
+      provider: msgs.isNotEmpty ? msgs.last.provider : sessionProvider,
       timestamp: json['timestamp'] != null
           ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -135,7 +143,47 @@ class ChatHistoryService {
     }
   }
 
-  /// Loads chat history from local storage and merges with backend history if available.
+  String _sessionDedupeKey(ChatSessionItem s) {
+    return s.title.trim().toLowerCase();
+  }
+
+  /// Deduplicates sessions by title key, merging message threads while preserving individual message providers.
+  List<ChatSessionItem> _deduplicateSessions(List<ChatSessionItem> rawList) {
+    final Map<String, ChatSessionItem> sessionMap = {};
+
+    for (final session in rawList) {
+      final String dedupeKey = _sessionDedupeKey(session);
+
+      if (sessionMap.containsKey(dedupeKey)) {
+        final existing = sessionMap[dedupeKey]!;
+        final mergedMsgs = List<ChatMessagePair>.from(existing.messages);
+        for (final msg in session.messages) {
+          if (!mergedMsgs.any((m) => m.prompt.trim() == msg.prompt.trim() && m.response.trim() == msg.response.trim())) {
+            mergedMsgs.add(msg);
+          }
+        }
+
+        // Prefer numeric backend ID (e.g. "2" instead of "1728300000000")
+        final String preferredId = (existing.id.length <= session.id.length) ? existing.id : session.id;
+
+        sessionMap[dedupeKey] = ChatSessionItem(
+          id: preferredId,
+          title: existing.title.isNotEmpty ? existing.title : session.title,
+          provider: mergedMsgs.isNotEmpty ? mergedMsgs.last.provider : session.provider,
+          timestamp: session.timestamp.isAfter(existing.timestamp) ? session.timestamp : existing.timestamp,
+          messages: mergedMsgs,
+        );
+      } else {
+        sessionMap[dedupeKey] = session;
+      }
+    }
+
+    final result = sessionMap.values.toList();
+    result.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return result;
+  }
+
+  /// Loads chat history from local storage and merges/deduplicates with backend history if available.
   Future<List<ChatSessionItem>> loadHistory() async {
     final localList = await _getLocalHistory();
 
@@ -147,20 +195,8 @@ class ChatHistoryService {
           final List<ChatSessionItem> remoteSessions =
               remoteHistory.map((json) => ChatSessionItem.fromJson(json)).toList();
 
-          final Map<String, ChatSessionItem> sessionMap = {};
-
-          for (final session in remoteSessions) {
-            sessionMap[session.id] = session;
-          }
-
-          for (final session in localList) {
-            if (!sessionMap.containsKey(session.id)) {
-              sessionMap[session.id] = session;
-            }
-          }
-
-          final mergedList = sessionMap.values.toList();
-          mergedList.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          final combined = [...remoteSessions, ...localList];
+          final mergedList = _deduplicateSessions(combined);
 
           await _saveLocalHistory(mergedList);
           return mergedList;
@@ -170,7 +206,7 @@ class ChatHistoryService {
       debugPrint("[ChatHistoryService] Error syncing with backend: $e");
     }
 
-    return localList;
+    return _deduplicateSessions(localList);
   }
 
   /// Adds a message pair (prompt + response) into the active conversation session.
@@ -182,7 +218,12 @@ class ChatHistoryService {
     try {
       final localList = await _getLocalHistory();
       final now = DateTime.now();
-      final newPair = ChatMessagePair(prompt: prompt, response: response, timestamp: now);
+      final newPair = ChatMessagePair(
+        prompt: prompt,
+        response: response,
+        provider: provider,
+        timestamp: now,
+      );
 
       ChatSessionItem? targetSession;
       if (_activeSessionId != null) {
@@ -191,15 +232,19 @@ class ChatHistoryService {
           targetSession = localList.removeAt(index);
         }
       } else if (localList.isNotEmpty) {
-        final top = localList.first;
-        if (now.difference(top.timestamp).inMinutes < 20) {
-          targetSession = localList.removeAt(0);
+        final String promptKey = prompt.trim().toLowerCase();
+        final index = localList.indexWhere((s) => s.title.trim().toLowerCase() == promptKey);
+        if (index != -1 && now.difference(localList[index].timestamp).inMinutes < 30) {
+          targetSession = localList.removeAt(index);
           _activeSessionId = targetSession.id;
         }
       }
 
       if (targetSession != null) {
-        final updatedMessages = List<ChatMessagePair>.from(targetSession.messages)..add(newPair);
+        final updatedMessages = List<ChatMessagePair>.from(targetSession.messages);
+        if (!updatedMessages.any((m) => m.prompt.trim() == prompt.trim() && m.response.trim() == response.trim())) {
+          updatedMessages.add(newPair);
+        }
         final updatedSession = ChatSessionItem(
           id: targetSession.id,
           title: targetSession.title,
@@ -221,7 +266,8 @@ class ChatHistoryService {
         localList.insert(0, newSession);
       }
 
-      await _saveLocalHistory(localList);
+      final deduplicated = _deduplicateSessions(localList);
+      await _saveLocalHistory(deduplicated);
     } catch (e) {
       debugPrint("[ChatHistoryService] Error adding message to session: $e");
     }
@@ -240,7 +286,8 @@ class ChatHistoryService {
       if (_activeSessionId == id) {
         _activeSessionId = null;
       }
-      await _saveLocalHistory(localList);
+      final deduplicated = _deduplicateSessions(localList);
+      await _saveLocalHistory(deduplicated);
     } catch (e) {
       debugPrint("[ChatHistoryService] Error deleting chat session: $e");
     }

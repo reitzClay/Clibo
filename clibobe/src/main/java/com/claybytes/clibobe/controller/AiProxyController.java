@@ -112,7 +112,7 @@ public class AiProxyController {
             item.put("id", session.getId().toString());
             item.put("title", session.getTitle() != null ? session.getTitle() : "Chat Session");
             item.put("messages", msgPairs);
-            item.put("provider", "Google Gemini");
+            item.put("provider", session.getProvider() != null ? session.getProvider() : "Google Gemini");
             item.put("timestamp", session.getCreatedAt() != null ? session.getCreatedAt().toString() : new Date().toString());
 
             responseList.add(item);

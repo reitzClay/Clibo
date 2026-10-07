@@ -53,6 +53,36 @@ class _MetricsTabState extends State<MetricsTab> {
     }
   }
 
+  String _getProviderAsset(AiProviderType type) {
+    switch (type) {
+      case AiProviderType.gemini:
+        return 'assets/images/gemini.png';
+      case AiProviderType.ollama:
+        return 'assets/images/ollama.png';
+      case AiProviderType.openai:
+        return 'assets/images/openai.png';
+      case AiProviderType.claude:
+        return 'assets/images/claude.png';
+      case AiProviderType.custom:
+        return 'assets/images/custom.png';
+    }
+  }
+
+  String _getProviderFallbackIcon(AiProviderType type) {
+    switch (type) {
+      case AiProviderType.gemini:
+        return '✨';
+      case AiProviderType.ollama:
+        return '🦙';
+      case AiProviderType.openai:
+        return '🧠';
+      case AiProviderType.claude:
+        return '🎭';
+      case AiProviderType.custom:
+        return '⚙️';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
@@ -123,9 +153,15 @@ class _MetricsTabState extends State<MetricsTab> {
               ),
               child: Row(
                 children: [
-                  Text(
-                    config.providerType == AiProviderType.ollama ? "🦙" : "✨",
-                    style: const TextStyle(fontSize: 20),
+                  Image.asset(
+                    _getProviderAsset(config.providerType),
+                    width: 24,
+                    height: 24,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Text(
+                      _getProviderFallbackIcon(config.providerType),
+                      style: const TextStyle(fontSize: 20),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(

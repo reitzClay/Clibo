@@ -91,7 +91,7 @@ public class OllamaAiService implements AiProviderService {
                 .map(output -> {
                     try {
                         guardrailService.incrementUserUsage(user, ModalityType.TEXT_MESSAGE);
-                        chatHistoryService.logChatInteraction(user, prompt, output);
+                        chatHistoryService.logChatInteraction(user, prompt, output, "Ollama Local");
                     } catch (Exception ex) {
                         logger.error("Failed to increment usage or log chat: {}", ex.getMessage());
                     }

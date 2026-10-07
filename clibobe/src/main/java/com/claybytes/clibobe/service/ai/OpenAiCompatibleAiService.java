@@ -84,7 +84,8 @@ public class OpenAiCompatibleAiService implements AiProviderService {
                 .map(output -> {
                     try {
                         guardrailService.incrementUserUsage(user, ModalityType.TEXT_MESSAGE);
-                        chatHistoryService.logChatInteraction(user, prompt, output);
+                        String providerLabel = model.toLowerCase().contains("claude") ? "Anthropic Claude" : "OpenAI (GPT-4o)";
+                        chatHistoryService.logChatInteraction(user, prompt, output, providerLabel);
                     } catch (Exception ex) {
                         logger.error("Failed to increment usage or log chat: {}", ex.getMessage());
                     }

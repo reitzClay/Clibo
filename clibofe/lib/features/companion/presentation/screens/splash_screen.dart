@@ -119,9 +119,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(50),
                           child: Padding(
-                            padding: const EdgeInsets.all(12.0),
+                            padding: const EdgeInsets.all(8.0),
                             child: Image.asset(
-                              'assets/images/Minimalist_tech_mono.png',
+                              'assets/images/claybytes.png',
                               color: Colors.white,
                               colorBlendMode: BlendMode.srcIn,
                               fit: BoxFit.contain,

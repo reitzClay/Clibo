@@ -189,11 +189,17 @@ class _ConfigTabState extends State<ConfigTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Text("✨", style: TextStyle(fontSize: 18)),
-                      SizedBox(width: 8),
-                      Text("Google Gemini Cloud", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      Image.asset(
+                        'assets/images/gemini.png',
+                        width: 22,
+                        height: 22,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Text("✨", style: TextStyle(fontSize: 18)),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text("Google Gemini Cloud", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -206,6 +212,8 @@ class _ConfigTabState extends State<ConfigTab> {
                     label: "Google Gemini API Key (Optional BYOK)",
                     hintText: "AIzaSy...",
                     controller: _byokKeyController,
+                    assetImage: 'assets/images/gemini.png',
+                    fallbackIcon: '✨',
                   ),
                 ],
               ),
@@ -220,12 +228,16 @@ class _ConfigTabState extends State<ConfigTab> {
               label: "OpenAI API Key (sk-...)",
               hintText: "sk-proj-...",
               controller: _byokKeyController,
+              assetImage: 'assets/images/openai.png',
+              fallbackIcon: '🧠',
             )
           ] else if (_selectedProvider == AiProviderType.claude) ...[
             ByokKeyInput(
               label: "Anthropic Claude API Key (sk-ant-...)",
               hintText: "sk-ant-api...",
               controller: _byokKeyController,
+              assetImage: 'assets/images/claude.png',
+              fallbackIcon: '🎭',
             )
           ] else if (_selectedProvider == AiProviderType.custom) ...[
             CustomEndpointCard(

@@ -23,16 +23,27 @@ public class ChatHistoryService {
 
     @Transactional
     public void logChatInteraction(User user, String prompt, String response) {
+        logChatInteraction(user, prompt, response, "Google Gemini");
+    }
+
+    @Transactional
+    public void logChatInteraction(User user, String prompt, String response, String provider) {
         if (user == null) return;
         
         List<ChatSession> sessions = sessionRepository.findByUser(user);
         ChatSession session;
+        String cleanProvider = (provider != null && !provider.isBlank()) ? provider : "Google Gemini";
+
         if (sessions.isEmpty()) {
             String title = prompt.length() > 30 ? prompt.substring(0, 30) + "..." : prompt;
-            session = new ChatSession(user, title);
+            session = new ChatSession(user, title, cleanProvider);
             session = sessionRepository.save(session);
         } else {
             session = sessions.get(sessions.size() - 1);
+            if (provider != null && !provider.isBlank()) {
+                session.setProvider(cleanProvider);
+                sessionRepository.save(session);
+            }
         }
 
         ChatMessage userMsg = new ChatMessage(session, "user", prompt);
