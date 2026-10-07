@@ -19,6 +19,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final AuthRepository _authRepository = locator<AuthRepository>();
+  final GlobalKey<GoogleSignInButtonState> _googleSignInKey = GlobalKey<GoogleSignInButtonState>();
   bool _isDevLoading = false;
 
   void _showError(String message) {
@@ -80,11 +81,8 @@ class _LoginScreenState extends State<LoginScreen> {
           actions: [
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-              onPressed: () async {
+              onPressed: () {
                 Navigator.of(context).pop(); // close dialog
-                try {
-                  await _authRepository.logConsent("v1.0");
-                } catch (_) {}
                 onConfirmed();
               },
               child: const Text("I Agree & Continue", style: TextStyle(color: Colors.white)),
@@ -159,7 +157,14 @@ class _LoginScreenState extends State<LoginScreen> {
               const Spacer(flex: 1),
 
               // 3. Google Sign-In Button
-              const GoogleSignInButton(),
+              GoogleSignInButton(
+                key: _googleSignInKey,
+                onConsentRequired: () {
+                  _showConsentAndProceed(() {
+                    _googleSignInKey.currentState?.triggerSignIn();
+                  });
+                },
+              ),
 
               if (kDebugMode) ...[
                 const SizedBox(height: 16),

@@ -88,10 +88,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
 
-    final List<Widget> tabViews = const [
-      HistoryTab(),
-      ConfigTab(),
-      MetricsTab(),
+    final List<Widget> tabViews = [
+      HistoryTab(tabController: _tabController),
+      const ConfigTab(),
+      const MetricsTab(),
     ];
 
     final userName = _currentUser?.name ?? "Developer Mode";

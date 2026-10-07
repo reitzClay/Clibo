@@ -23,6 +23,7 @@ class ProviderDropdown extends StatelessWidget {
         'badge': 'Recommended (Free Tier)',
         'description': 'Smart, fast cloud AI powered by Gemini Flash.',
         'icon': '✨',
+        'assetImage': 'assets/images/gemini.png',
         'color': Colors.blueAccent,
       },
       {
@@ -31,6 +32,7 @@ class ProviderDropdown extends StatelessWidget {
         'badge': '100% Offline & Private',
         'description': 'Zero token cost. Runs on your computer network.',
         'icon': '🦙',
+        'assetImage': 'assets/images/ollama.png',
         'color': Colors.orangeAccent,
       },
       {
@@ -39,6 +41,7 @@ class ProviderDropdown extends StatelessWidget {
         'badge': 'BYOK Key',
         'description': 'Connect your OpenAI API key directly.',
         'icon': '🧠',
+        'assetImage': 'assets/images/openai.png',
         'color': const Color(0xFF10B981),
       },
       {
@@ -47,6 +50,7 @@ class ProviderDropdown extends StatelessWidget {
         'badge': 'BYOK Key',
         'description': 'Connect your Claude API key directly.',
         'icon': '🎭',
+        'assetImage': 'assets/images/claude.png',
         'color': Colors.purpleAccent,
       },
       {
@@ -55,6 +59,7 @@ class ProviderDropdown extends StatelessWidget {
         'badge': 'Advanced',
         'description': 'LM Studio, vLLM, or self-hosted LLM endpoints.',
         'icon': '⚙️',
+        'assetImage': 'assets/images/custom.png',
         'color': Colors.grey,
       },
     ];
@@ -93,14 +98,20 @@ class ProviderDropdown extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: (p['color'] as Color).withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: Text(
-                        p['icon'] as String,
-                        style: const TextStyle(fontSize: 22),
+                      child: Image.asset(
+                        p['assetImage'] as String,
+                        width: 24,
+                        height: 24,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Text(
+                          p['icon'] as String,
+                          style: const TextStyle(fontSize: 22),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),

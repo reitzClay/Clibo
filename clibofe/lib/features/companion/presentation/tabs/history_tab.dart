@@ -1,18 +1,22 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import 'package:clibofe/app/service_locator.dart';
 import 'package:clibofe/data/services/chat_history_service.dart';
 
 class HistoryTab extends StatefulWidget {
-  const HistoryTab({super.key});
+  final TabController? tabController;
+
+  const HistoryTab({super.key, this.tabController});
 
   @override
   State<HistoryTab> createState() => _HistoryTabState();
 }
 
-class _HistoryTabState extends State<HistoryTab> {
+class _HistoryTabState extends State<HistoryTab> with WidgetsBindingObserver {
   final ChatHistoryService _historyService = locator<ChatHistoryService>();
 
   bool _isLoading = false;
@@ -24,14 +28,31 @@ class _HistoryTabState extends State<HistoryTab> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    widget.tabController?.addListener(_handleTabChange);
     _loadHistory();
     _searchController.addListener(_applyFilters);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    widget.tabController?.removeListener(_handleTabChange);
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadHistory();
+    }
+  }
+
+  void _handleTabChange() {
+    if (widget.tabController != null && widget.tabController!.index == 0) {
+      _loadHistory();
+    }
   }
 
   Future<void> _loadHistory() async {
@@ -60,8 +81,10 @@ class _HistoryTabState extends State<HistoryTab> {
     setState(() {
       _filteredSessions = _allSessions.where((session) {
         final matchesQuery = query.isEmpty ||
-            session.prompt.toLowerCase().contains(query) ||
-            session.response.toLowerCase().contains(query);
+            session.title.toLowerCase().contains(query) ||
+            session.messages.any((m) =>
+                m.prompt.toLowerCase().contains(query) ||
+                m.response.toLowerCase().contains(query));
 
         final matchesFilter = _selectedFilter == 'All' ||
             session.provider.toLowerCase().contains(_selectedFilter.toLowerCase());
@@ -106,7 +129,58 @@ class _HistoryTabState extends State<HistoryTab> {
     }
   }
 
+  Future<void> _resumeSessionInOverlay(ChatSessionItem session) async {
+    try {
+      final bool isGranted = await FlutterOverlayWindow.isPermissionGranted();
+      if (!isGranted) {
+        final bool? status = await FlutterOverlayWindow.requestPermission();
+        if (status != true) return;
+      }
+
+      _historyService.setActiveSessionId(session.id);
+
+      if (!await FlutterOverlayWindow.isActive()) {
+        await FlutterOverlayWindow.showOverlay(
+          enableDrag: true,
+          overlayTitle: "Clibo Assistant",
+          overlayContent: "Floating assistant is active",
+          height: 200,
+          width: 200,
+          alignment: OverlayAlignment.center,
+          flag: OverlayFlag.defaultFlag,
+          positionGravity: PositionGravity.auto,
+        );
+      }
+
+      final payload = jsonEncode({
+        'action': 'RESUME_CHAT',
+        'sessionId': session.id,
+        'messages': session.messages.map((m) => m.toJson()).toList(),
+      });
+
+      await FlutterOverlayWindow.shareData(payload);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Resumed '${session.title}' in overlay!"),
+            backgroundColor: Colors.blueAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint("[HistoryTab] Error resuming session in overlay: $e");
+    }
+  }
+
   void _showSessionDetailSheet(ChatSessionItem session) {
+    final StringBuffer fullCopyText = StringBuffer();
+    for (int i = 0; i < session.messages.length; i++) {
+      fullCopyText.writeln("User: ${session.messages[i].prompt}");
+      fullCopyText.writeln("AI (${session.provider}): ${session.messages[i].response}\n");
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -116,8 +190,8 @@ class _HistoryTabState extends State<HistoryTab> {
       ),
       builder: (ctx) => DraggableScrollableSheet(
         expand: false,
-        initialChildSize: 0.7,
-        maxChildSize: 0.9,
+        initialChildSize: 0.75,
+        maxChildSize: 0.95,
         builder: (_, scrollController) => Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -126,12 +200,21 @@ class _HistoryTabState extends State<HistoryTab> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Text(session.provider.contains('Ollama') ? '🦙' : '✨', style: const TextStyle(fontSize: 20)),
-                      const SizedBox(width: 8),
-                      Text(session.provider, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
-                    ],
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Text(session.provider.contains('Ollama') ? '🦙' : '✨', style: const TextStyle(fontSize: 20)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            session.title,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white70),
@@ -139,57 +222,122 @@ class _HistoryTabState extends State<HistoryTab> {
                   ),
                 ],
               ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      session.provider,
+                      style: const TextStyle(color: Colors.blueAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "${session.messageCount} message ${session.messageCount == 1 ? 'turn' : 'turns'}",
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
               const Divider(color: Colors.white12),
               Expanded(
-                child: ListView(
+                child: ListView.builder(
                   controller: scrollController,
                   physics: const BouncingScrollPhysics(),
-                  children: [
-                    const Text("Prompt", style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blueAccent.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
+                  itemCount: session.messages.length,
+                  itemBuilder: (context, idx) {
+                    final msg = session.messages[idx];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.person_outline, size: 14, color: Colors.blueAccent),
+                              SizedBox(width: 6),
+                              Text("You", style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
+                            ),
+                            child: SelectableText(msg.prompt, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              const Icon(Icons.smart_toy_outlined, size: 14, color: Colors.greenAccent),
+                              const SizedBox(width: 6),
+                              Text("Clibo (${session.provider})", style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white12),
+                            ),
+                            child: SelectableText(msg.response, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
+                          ),
+                        ],
                       ),
-                      child: SelectableText(session.prompt, style: const TextStyle(color: Colors.white, fontSize: 14)),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text("AI Response", style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white12),
-                      ),
-                      child: SelectableText(session.response, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 12),
               SafeArea(
                 top: false,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 46),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: const Icon(Icons.copy_rounded, size: 18),
-                  label: const Text("Copy AI Response"),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: session.response));
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Copied response to clipboard!")),
-                    );
-                  },
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 46),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                        label: const Text("Resume in Overlay"),
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await _resumeSessionInOverlay(session);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        minimumSize: const Size(46, 46),
+                      ),
+                      icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 20),
+                      tooltip: "Copy Thread",
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: fullCopyText.toString()));
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Copied conversation to clipboard!")),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -213,12 +361,21 @@ class _HistoryTabState extends State<HistoryTab> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Chat History", style: theme.textTheme.h3),
-              if (_allSessions.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
-                  onPressed: _clearAllHistory,
-                  tooltip: "Clear All History",
-                ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.refresh_rounded, color: Colors.blueAccent),
+                    onPressed: _loadHistory,
+                    tooltip: "Refresh History",
+                  ),
+                  if (_allSessions.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
+                      onPressed: _clearAllHistory,
+                      tooltip: "Clear All History",
+                    ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -268,7 +425,7 @@ class _HistoryTabState extends State<HistoryTab> {
           ),
           const SizedBox(height: 16),
 
-          // 4. Session Item List
+          // 4. Grouped Session Item List
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -309,16 +466,35 @@ class _HistoryTabState extends State<HistoryTab> {
                                 backgroundColor: Colors.blueAccent.withValues(alpha: 0.15),
                                 child: Text(session.provider.contains('Ollama') ? '🦙' : '✨', style: const TextStyle(fontSize: 18)),
                               ),
-                              title: Text(
-                                session.prompt,
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: theme.colorScheme.foreground),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              title: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      session.title,
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: theme.colorScheme.foreground),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (session.messageCount > 1)
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 6),
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blueAccent.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        "${session.messageCount} msgs",
+                                        style: const TextStyle(color: Colors.blueAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                ],
                               ),
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 4.0),
                                 child: Text(
-                                  session.response,
+                                  session.lastResponse,
                                   style: TextStyle(color: theme.colorScheme.mutedForeground, fontSize: 12),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,

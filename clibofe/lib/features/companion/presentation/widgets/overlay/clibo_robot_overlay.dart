@@ -52,6 +52,40 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
         if (mounted) {
           _clearChat();
         }
+      } else if (data != null && data.toString().startsWith('{')) {
+        try {
+          final Map<String, dynamic> payload = jsonDecode(data.toString());
+          if (payload['action'] == 'RESUME_CHAT') {
+            final String? sessionId = payload['sessionId']?.toString();
+            final List<dynamic>? rawMsgs = payload['messages'] as List<dynamic>?;
+
+            if (sessionId != null && rawMsgs != null) {
+              locator<ChatHistoryService>().setActiveSessionId(sessionId);
+              if (mounted) {
+                setState(() {
+                  _messages.clear();
+                  for (final msg in rawMsgs) {
+                    final p = msg['prompt']?.toString() ?? '';
+                    final r = msg['response']?.toString() ?? '';
+                    if (r.isNotEmpty) _messages.insert(0, {'text': r, 'isAi': true});
+                    if (p.isNotEmpty) _messages.insert(0, {'text': p, 'isAi': false});
+                  }
+                  if (_messages.isEmpty) {
+                    _messages.add({
+                      'text': 'Resumed session. Ask Clibo AI anything!',
+                      'isAi': true,
+                    });
+                  }
+                  isExpanded = true;
+                });
+                FlutterOverlayWindow.resizeOverlay(340, 500, true);
+                FlutterOverlayWindow.updateFlag(OverlayFlag.focusPointer);
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint("[OverlayIsolate] Error handling RESUME_CHAT payload: $e");
+        }
       }
     });
 
@@ -87,6 +121,7 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
       isMaximized = false;
       _isTickerVisible = false;
     });
+    locator<ChatHistoryService>().startNewSession();
   }
 
   void _toggleExpansion() async {

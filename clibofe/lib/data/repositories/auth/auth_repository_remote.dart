@@ -203,6 +203,7 @@ class AuthRepositoryRemote implements AuthRepository {
   Future<void> _saveUserSession(User user, String token) async {
     await _storage.write(key: _keyAuthToken, value: token);
     await _storage.write(key: _keyUserData, value: jsonEncode(user.toJson()));
+    await logConsent("v1.0");
   }
 
   @override
@@ -233,7 +234,7 @@ class AuthRepositoryRemote implements AuthRepository {
   Future<void> logConsent(String policyVersion) async {
     final String? token = await _storage.read(key: _keyAuthToken);
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse('$baseUrl/auth/consent'),
         headers: {
           'Content-Type': 'application/json',
@@ -241,6 +242,9 @@ class AuthRepositoryRemote implements AuthRepository {
         },
         body: jsonEncode({'policyVersion': policyVersion}),
       );
-    } catch (_) {}
+      debugPrint("[AuthRepositoryRemote] Consent logged status: ${response.statusCode}");
+    } catch (e) {
+      debugPrint("[AuthRepositoryRemote] Error logging consent: $e");
+    }
   }
 }

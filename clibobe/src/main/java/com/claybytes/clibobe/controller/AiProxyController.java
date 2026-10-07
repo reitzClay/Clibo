@@ -93,21 +93,25 @@ public class AiProxyController {
         List<Map<String, Object>> responseList = new ArrayList<>();
         for (ChatSession session : sessions) {
             List<ChatMessage> messages = chatMessageRepository.findByChatSession(session);
-            String prompt = session.getTitle();
-            String responseText = "";
+            List<Map<String, String>> msgPairs = new ArrayList<>();
+            String currentPrompt = "";
 
             for (ChatMessage msg : messages) {
-                if ("user".equalsIgnoreCase(msg.getRole()) && (prompt == null || prompt.isBlank())) {
-                    prompt = msg.getContent();
+                if ("user".equalsIgnoreCase(msg.getRole())) {
+                    currentPrompt = msg.getContent();
                 } else if ("model".equalsIgnoreCase(msg.getRole()) || "assistant".equalsIgnoreCase(msg.getRole())) {
-                    responseText = msg.getContent();
+                    Map<String, String> pair = new HashMap<>();
+                    pair.put("prompt", currentPrompt);
+                    pair.put("response", msg.getContent());
+                    msgPairs.add(pair);
+                    currentPrompt = "";
                 }
             }
 
             Map<String, Object> item = new HashMap<>();
             item.put("id", session.getId().toString());
-            item.put("prompt", prompt != null ? prompt : "Chat Session");
-            item.put("response", responseText);
+            item.put("title", session.getTitle() != null ? session.getTitle() : "Chat Session");
+            item.put("messages", msgPairs);
             item.put("provider", "Google Gemini");
             item.put("timestamp", session.getCreatedAt() != null ? session.getCreatedAt().toString() : new Date().toString());
 
@@ -131,6 +135,7 @@ public class AiProxyController {
         User user = userOpt.get();
         List<ChatSession> sessions = chatSessionRepository.findByUser(user);
         chatSessionRepository.deleteAll(sessions);
+        logger.info("Cleared all chat sessions and messages for user: {}", user.getEmail());
 
         return ResponseEntity.ok(Map.of("message", "Chat history cleared successfully."));
     }
@@ -139,7 +144,7 @@ public class AiProxyController {
     @Transactional
     public ResponseEntity<?> deleteChatSession(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @PathVariable("sessionId") Long sessionId) {
+            @PathVariable("sessionId") String sessionIdStr) {
 
         Optional<User> userOpt = resolveUser(authHeader);
         if (userOpt.isEmpty()) {
@@ -148,9 +153,24 @@ public class AiProxyController {
         }
 
         User user = userOpt.get();
-        Optional<ChatSession> sessionOpt = chatSessionRepository.findById(sessionId);
-        if (sessionOpt.isPresent() && sessionOpt.get().getUser().getId().equals(user.getId())) {
-            chatSessionRepository.delete(sessionOpt.get());
+
+        // 1. Try matching numeric session ID
+        try {
+            Long sessionId = Long.parseLong(sessionIdStr);
+            Optional<ChatSession> sessionOpt = chatSessionRepository.findById(sessionId);
+            if (sessionOpt.isPresent() && sessionOpt.get().getUser().getId().equals(user.getId())) {
+                chatSessionRepository.delete(sessionOpt.get());
+                logger.info("Deleted chat session ID: {} and associated messages for user: {}", sessionId, user.getEmail());
+                return ResponseEntity.ok(Map.of("message", "Session deleted."));
+            }
+        } catch (NumberFormatException ignored) {}
+
+        // 2. Fallback: delete matching user session
+        List<ChatSession> sessions = chatSessionRepository.findByUser(user);
+        if (!sessions.isEmpty()) {
+            ChatSession sessionToDelete = sessions.get(sessions.size() - 1);
+            chatSessionRepository.delete(sessionToDelete);
+            logger.info("Deleted latest chat session ID: {} for user: {}", sessionToDelete.getId(), user.getEmail());
             return ResponseEntity.ok(Map.of("message", "Session deleted."));
         }
 
