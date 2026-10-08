@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
-import '../../../../../domain/config/ai_provider_config.dart';
+import 'package:clibofe/domain/config/ai_provider_config.dart';
+import 'provider_logo.dart';
 
 class ProviderDropdown extends StatelessWidget {
   final AiProviderType selectedType;
@@ -16,38 +17,146 @@ class ProviderDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
 
+    final List<Map<String, dynamic>> providers = [
+      {
+        'type': AiProviderType.gemini,
+        'name': 'Google Gemini',
+        'badge': 'Recommended (Free Tier)',
+        'description': 'Smart, fast cloud AI powered by Gemini Flash.',
+        'color': Colors.blueAccent,
+      },
+      {
+        'type': AiProviderType.ollama,
+        'name': 'Ollama Local',
+        'badge': '100% Offline & Private',
+        'description': 'Zero token cost. Runs on your computer network.',
+        'color': Colors.orangeAccent,
+      },
+      {
+        'type': AiProviderType.openai,
+        'name': 'OpenAI (GPT-4o)',
+        'badge': 'BYOK Key',
+        'description': 'Connect your OpenAI API key directly.',
+        'color': const Color(0xFF10B981),
+      },
+      {
+        'type': AiProviderType.claude,
+        'name': 'Anthropic Claude',
+        'badge': 'BYOK Key',
+        'description': 'Connect your Claude API key directly.',
+        'color': Colors.purpleAccent,
+      },
+      {
+        'type': AiProviderType.custom,
+        'name': 'Custom Endpoint',
+        'badge': 'Advanced',
+        'description': 'LM Studio, vLLM, or self-hosted LLM endpoints.',
+        'color': Colors.grey,
+      },
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Select AI Provider",
-          style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold),
+          "Choose AI Engine",
+          style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
         ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.card,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.colorScheme.border),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<AiProviderType>(
-              value: selectedType,
-              dropdownColor: theme.colorScheme.card,
-              style: TextStyle(color: theme.colorScheme.foreground, fontSize: 15),
-              isExpanded: true,
-              items: AiProviderType.values.map((type) {
-                return DropdownMenuItem<AiProviderType>(
-                  value: type,
-                  child: Text(type.label),
-                );
-              }).toList(),
-              onChanged: (val) {
-                if (val != null) onChanged(val);
-              },
-            ),
-          ),
+        const SizedBox(height: 12),
+        Column(
+          children: providers.map((p) {
+            final AiProviderType type = p['type'] as AiProviderType;
+            final bool isSelected = type == selectedType;
+
+            return GestureDetector(
+              onTap: () => onChanged(type),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                      : theme.colorScheme.card,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.border,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: (p['color'] as Color).withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: ProviderLogo(providerKey: type.id, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              Text(
+                                p['name'] as String,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14.5,
+                                  color: theme.colorScheme.foreground,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: (p['color'] as Color).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  p['badge'] as String,
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: p['color'] as Color,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            p['description'] as String,
+                            style: theme.textTheme.small.copyWith(
+                              fontSize: 11.5,
+                              color: theme.colorScheme.foreground.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Radio<AiProviderType>(
+                      value: type,
+                      groupValue: selectedType,
+                      activeColor: theme.colorScheme.primary,
+                      onChanged: (val) {
+                        if (val != null) onChanged(val);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );

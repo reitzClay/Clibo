@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'provider_logo.dart';
 
 class ByokKeyInput extends StatefulWidget {
   final String label;
   final String hintText;
   final TextEditingController controller;
+  final String? providerKey;
 
   const ByokKeyInput({
     super.key,
     required this.label,
     required this.hintText,
     required this.controller,
+    this.providerKey,
   });
 
   @override
@@ -27,7 +30,21 @@ class _ByokKeyInputState extends State<ByokKeyInput> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold)),
+        Row(
+          children: [
+            if (widget.providerKey != null) ...[
+              ProviderLogo(providerKey: widget.providerKey!, size: 20),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Text(
+                widget.label,
+                style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: widget.controller,

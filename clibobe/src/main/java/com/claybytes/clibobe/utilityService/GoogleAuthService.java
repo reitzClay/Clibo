@@ -52,6 +52,9 @@ public class GoogleAuthService {
                     Payload fallbackPayload = new Payload();
                     fallbackPayload.setEmail(email);
                     fallbackPayload.set("name", claims.getOrDefault("name", email.split("@")[0]));
+                    if (claims.containsKey("picture")) {
+                        fallbackPayload.set("picture", claims.get("picture"));
+                    }
                     return fallbackPayload;
                 }
             }

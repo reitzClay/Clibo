@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class UsageGuardrailService {
@@ -40,6 +41,19 @@ public class UsageGuardrailService {
 
     @Transactional
     public OrganizationUsage getOrCreateOrgUsage(Organization org) {
+        if (org == null) return null;
+        try {
+            org.getPlanTier();
+            org.getName();
+        } catch (Exception ignored) {}
+        
+        if (org.getId() != null) {
+            Optional<OrganizationUsage> existing = orgUsageRepository.findByOrganizationId(org.getId());
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
+        
         return orgUsageRepository.findByOrganization(org)
                 .orElseGet(() -> {
                     OrganizationUsage orgUsage = new OrganizationUsage(org);
@@ -49,41 +63,53 @@ public class UsageGuardrailService {
 
     @Transactional
     public boolean isUserAllowedToRequest(User user, ModalityType modality) {
-        if ("PRO".equalsIgnoreCase(user.getUserTier()) ||
-            "PREMIUM".equalsIgnoreCase(user.getUserTier()) ||
-            "ADMIN".equalsIgnoreCase(user.getSystemRole()) ||
-            "ORG_ADMIN".equalsIgnoreCase(user.getSystemRole())) {
+        User managedUser = getManagedUser(user);
+        if (managedUser == null) return false;
+        if ("PRO".equalsIgnoreCase(managedUser.getUserTier()) ||
+            "PREMIUM".equalsIgnoreCase(managedUser.getUserTier()) ||
+            "ADMIN".equalsIgnoreCase(managedUser.getSystemRole()) ||
+            "ORG_ADMIN".equalsIgnoreCase(managedUser.getSystemRole())) {
             return true;
         }
 
-        if (user.getOrganization() != null) {
-            OrganizationUsage orgUsage = getOrCreateOrgUsage(user.getOrganization());
+        if (managedUser.getOrganization() != null) {
+            OrganizationUsage orgUsage = getOrCreateOrgUsage(managedUser.getOrganization());
             return orgUsage.canUse(modality);
         }
 
-        UserUsage usage = getOrCreateUsage(user);
+        UserUsage usage = getOrCreateUsage(managedUser);
         return usage.canUse(modality);
     }
 
     @Transactional
     public void incrementUserUsage(User user, ModalityType modality) {
-        if (user.getOrganization() != null) {
-            OrganizationUsage orgUsage = getOrCreateOrgUsage(user.getOrganization());
+        User managedUser = getManagedUser(user);
+        if (managedUser == null) return;
+        if (managedUser.getOrganization() != null) {
+            OrganizationUsage orgUsage = getOrCreateOrgUsage(managedUser.getOrganization());
             orgUsage.increment(modality);
             orgUsageRepository.save(orgUsage);
         } else {
-            UserUsage usage = getOrCreateUsage(user);
+            UserUsage usage = getOrCreateUsage(managedUser);
             usage.increment(modality);
             usageRepository.save(usage);
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Map<String, Object> getUsageStats(User user) {
-        if (user.getOrganization() != null) {
-            OrganizationUsage orgUsage = getOrCreateOrgUsage(user.getOrganization());
+        User managedUser = getManagedUser(user);
+        if (managedUser == null) return new HashMap<>();
+
+        if (managedUser.getOrganization() != null) {
+            Organization org = managedUser.getOrganization();
+            try {
+                org.getPlanTier();
+                org.getName();
+            } catch (Exception ignored) {}
+            OrganizationUsage orgUsage = getOrCreateOrgUsage(org);
             Map<String, Object> stats = new HashMap<>();
-            stats.put("userTier", user.getUserTier() + " (Org: " + user.getOrganization().getName() + ")");
+            stats.put("userTier", managedUser.getUserTier() + " (Org: " + (org.getName() != null ? org.getName() : "Team") + ")");
             stats.put("textMessagesUsed", orgUsage.getTextMessagesUsed());
             stats.put("textMessagesLimit", orgUsage.getTextMessagesLimit());
             stats.put("textMessagesRemaining", Math.max(0, orgUsage.getTextMessagesLimit() - orgUsage.getTextMessagesUsed()));
@@ -100,11 +126,11 @@ public class UsageGuardrailService {
             return stats;
         }
 
-        UserUsage usage = getOrCreateUsage(user);
+        UserUsage usage = getOrCreateUsage(managedUser);
         usage.resetDailyCountersIfExpired();
 
         Map<String, Object> stats = new HashMap<>();
-        stats.put("userTier", user.getUserTier());
+        stats.put("userTier", managedUser.getUserTier());
         stats.put("textMessagesUsed", usage.getTextMessagesUsed());
         stats.put("textMessagesLimit", usage.getTextMessagesLimit());
         stats.put("textMessagesRemaining", Math.max(0, usage.getTextMessagesLimit() - usage.getTextMessagesUsed()));
@@ -132,6 +158,17 @@ public class UsageGuardrailService {
     public void incrementUserUsage(String emailOrId) {
         resolveUser(emailOrId)
                 .ifPresent(user -> incrementUserUsage(user, ModalityType.TEXT_MESSAGE));
+    }
+
+    private User getManagedUser(User user) {
+        if (user == null) return null;
+        if (user.getId() != null) {
+            return userRepository.findById(user.getId()).orElse(user);
+        }
+        if (user.getEmail() != null) {
+            return userRepository.findByEmail(user.getEmail()).orElse(user);
+        }
+        return user;
     }
 
     private java.util.Optional<User> resolveUser(String emailOrId) {

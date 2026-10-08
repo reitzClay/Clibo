@@ -15,6 +15,9 @@ public class User {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "picture_url", length = 1024)
+    private String pictureUrl;
+
     @Column(nullable = false)
     private String userTier = "FREE";
 
@@ -46,6 +49,14 @@ public class User {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public void setPictureUrl(String pictureUrl) {
+        this.pictureUrl = pictureUrl;
     }
 
     public String getUserTier() {

@@ -26,5 +26,5 @@ COPY --from=builder /app/target/*.jar app.jar
 # Expose port 8080 to the outside world
 EXPOSE 8080
 
-# Execute the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Execute the application with 512MB-1GB container RAM auto-scaling JVM parameters
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-XX:+UseG1GC", "-jar", "app.jar"]

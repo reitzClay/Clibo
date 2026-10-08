@@ -39,9 +39,10 @@ public class AuthController {
             if (tokenPayload != null) {
                 String email = tokenPayload.getEmail();
                 String name = (String) tokenPayload.get("name");
+                String pictureUrl = (String) tokenPayload.get("picture");
 
                 // Route through our database service layer
-                User user = userService.processUserLogin(email, name);
+                User user = userService.processUserLogin(email, name, pictureUrl);
 
                 // Return authenticated profile data back to Flutter
                 return ResponseEntity.ok(user);
@@ -52,6 +53,25 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Token verification engine failure: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/email")
+    public ResponseEntity<?> loginWithEmail(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+        }
+
+        try {
+            String cleanEmail = email.trim();
+            String name = cleanEmail.contains("@") ? cleanEmail.substring(0, cleanEmail.indexOf("@")) : "Company User";
+            User user = userService.processUserLogin(cleanEmail, name);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Company login failed: " + e.getMessage()));
         }
     }
 }

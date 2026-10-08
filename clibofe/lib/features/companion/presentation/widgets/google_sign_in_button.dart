@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
-import '../../../../app/service_locator.dart';
-import '../../../../data/repositories/auth/auth_repository.dart';
+import 'package:clibofe/app/service_locator.dart';
+import 'package:clibofe/data/repositories/auth/auth_repository.dart';
 import '../screens/home_screen.dart';
 
 class GoogleSignInButton extends StatefulWidget {
   final VoidCallback? onSuccess;
-  const GoogleSignInButton({super.key, this.onSuccess});
+  final VoidCallback? onConsentRequired;
+  const GoogleSignInButton({super.key, this.onSuccess, this.onConsentRequired});
 
   @override
-  State<GoogleSignInButton> createState() => _GoogleSignInButtonState();
+  State<GoogleSignInButton> createState() => GoogleSignInButtonState();
 }
 
-class _GoogleSignInButtonState extends State<GoogleSignInButton> {
+class GoogleSignInButtonState extends State<GoogleSignInButton> {
   final AuthRepository _authRepository = locator<AuthRepository>();
   bool _isLoading = false;
+
+  Future<void> triggerSignIn() async {
+    await _handleGoogleSignIn();
+  }
 
   Future<void> _handleGoogleSignIn() async {
     setState(() {
@@ -65,7 +70,15 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
         elevation: 0,
       ),
-      onPressed: _isLoading ? null : _handleGoogleSignIn,
+      onPressed: _isLoading
+          ? null
+          : () {
+              if (widget.onConsentRequired != null) {
+                widget.onConsentRequired!();
+              } else {
+                _handleGoogleSignIn();
+              }
+            },
       child: _isLoading
           ? const SizedBox(
               height: 20,
@@ -78,12 +91,12 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Clean, robust Google 'G' icon adhering to Google Identity / Material guidelines
-                Container(
-                  width: 20,
-                  height: 20,
-                  alignment: Alignment.center,
-                  child: const Text(
+                Image.asset(
+                  'assets/images/google.png',
+                  width: 22,
+                  height: 22,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Text(
                     'G',
                     style: TextStyle(
                       fontSize: 18,
