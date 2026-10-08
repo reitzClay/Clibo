@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 abstract class CliboAIClient {
   Future<String> generateResponse(
     String prompt, {
+    String? cleanPrompt,
+    String? sessionId,
     String? imageBase64,
     String? imageMimeType,
     String? audioBase64,
@@ -31,16 +33,29 @@ class BackendProxyAIClient implements CliboAIClient {
   @override
   Future<String> generateResponse(
     String prompt, {
+    String? cleanPrompt,
+    String? sessionId,
     String? imageBase64,
     String? imageMimeType,
     String? audioBase64,
     String? audioMimeType,
   }) async {
     final String? token = await _storage.read(key: _keyAuthToken);
-    final String providerId = await _storage.read(key: 'clibo_ai_provider') ?? 'ollama';
+    final String providerId = await _storage.read(key: 'clibo_ai_provider') ?? 'gemini';
     final String ollamaUrl = await _storage.read(key: 'clibo_ollama_url') ?? 'http://192.168.0.103:11434';
     final String ollamaModel = await _storage.read(key: 'clibo_ollama_model') ?? 'tinyllama:1.1b';
-    final String byokKey = await _storage.read(key: 'clibo_byok_key') ?? '';
+    
+    String activeKey = '';
+    if (providerId == 'gemini') {
+      activeKey = await _storage.read(key: 'clibo_gemini_key') ?? await _storage.read(key: 'clibo_byok_key') ?? '';
+    } else if (providerId == 'openai') {
+      activeKey = await _storage.read(key: 'clibo_openai_key') ?? '';
+    } else if (providerId == 'claude') {
+      activeKey = await _storage.read(key: 'clibo_claude_key') ?? '';
+    } else if (providerId == 'custom') {
+      activeKey = await _storage.read(key: 'clibo_custom_key') ?? '';
+    }
+
     final String customUrl = await _storage.read(key: 'clibo_custom_provider_url') ?? '';
     final String customModel = await _storage.read(key: 'clibo_custom_model') ?? '';
 
@@ -55,10 +70,12 @@ class BackendProxyAIClient implements CliboAIClient {
         })
         ..body = jsonEncode({
           'prompt': prompt,
+          'cleanPrompt': cleanPrompt ?? prompt,
+          if (sessionId != null) 'sessionId': sessionId,
           'aiProvider': providerId,
           'ollamaBaseUrl': ollamaUrl,
           'ollamaModel': ollamaModel,
-          'byokApiKey': byokKey,
+          'byokApiKey': activeKey,
           'customBaseUrl': customUrl,
           'customModel': customModel,
           if (imageBase64 != null) 'imageBase64': imageBase64,
@@ -149,6 +166,7 @@ class BackendProxyAIClient implements CliboAIClient {
         .replaceAll(r'\n', '\n')
         .replaceAll(r'\"', '"')
         .replaceAll(r'\u0027', "'")
+        .replaceAll(r'\u0026', "&")
         .replaceAll(r'\\', '\\')
         .trim();
 
@@ -183,6 +201,54 @@ class BackendProxyAIClient implements CliboAIClient {
     }
 
     return cleaned.trim();
+  }
+
+  /// Fetches the user's saved chat history from PostgreSQL
+  Future<List<Map<String, dynamic>>?> fetchChatHistory() async {
+    try {
+      final String? token = await _storage.read(key: _keyAuthToken);
+      final response = await http.get(
+        Uri.parse('$backendBaseUrl/ai/history'),
+        headers: {
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> decoded = jsonDecode(response.body);
+        return decoded.cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Clears user's chat history from PostgreSQL
+  Future<bool> clearBackendHistory() async {
+    try {
+      final String? token = await _storage.read(key: _keyAuthToken);
+      final response = await http.delete(
+        Uri.parse('$backendBaseUrl/ai/history'),
+        headers: {
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      );
+      return response.statusCode == 200;
+    } catch (_) {}
+    return false;
+  }
+
+  /// Deletes a specific chat session from PostgreSQL
+  Future<bool> deleteBackendSession(String sessionId) async {
+    try {
+      final String? token = await _storage.read(key: _keyAuthToken);
+      final response = await http.delete(
+        Uri.parse('$backendBaseUrl/ai/history/$sessionId'),
+        headers: {
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      );
+      return response.statusCode == 200;
+    } catch (_) {}
+    return false;
   }
 
   /// Fetches the user's current metered usage stats (messages, screenshots, voice notes remaining)
@@ -225,6 +291,8 @@ class GeminiClient implements CliboAIClient {
   @override
   Future<String> generateResponse(
     String prompt, {
+    String? cleanPrompt,
+    String? sessionId,
     String? imageBase64,
     String? imageMimeType,
     String? audioBase64,
@@ -245,6 +313,8 @@ class OpenAiCompatibleClient implements CliboAIClient {
   @override
   Future<String> generateResponse(
     String prompt, {
+    String? cleanPrompt,
+    String? sessionId,
     String? imageBase64,
     String? imageMimeType,
     String? audioBase64,

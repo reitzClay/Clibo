@@ -2,12 +2,22 @@ spring:
   application:
     name: clibobe
 
-  # Database Connection Details
+  # Java 21 Project Loom / Virtual Threads Enablement
+  threads:
+    virtual:
+      enabled: true
+
+  # Database Connection Details & Low-Memory Sized Hikari Pool
   datasource:
     url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/clibo_db?currentSchema=public}"
     username: clibo_user
     password: clibo_pass
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+      idle-timeout: 30000
+      max-lifetime: 1800000
 
   # JPA / Hibernate Configuration
   jpa:

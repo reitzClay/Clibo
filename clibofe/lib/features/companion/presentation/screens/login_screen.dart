@@ -1,8 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
-import '../../../../app/service_locator.dart';
-import '../../../../data/repositories/auth/auth_repository.dart';
+import 'package:clibofe/app/service_locator.dart';
+import 'package:clibofe/data/repositories/auth/auth_repository.dart';
 import '../widgets/google_sign_in_button.dart';
 import 'home_screen.dart';
 // import 'register_organization_screen.dart'; // Retained for future B2B/Company feature expansion
@@ -18,6 +19,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final AuthRepository _authRepository = locator<AuthRepository>();
+  final GlobalKey<GoogleSignInButtonState> _googleSignInKey = GlobalKey<GoogleSignInButtonState>();
   bool _isDevLoading = false;
 
   void _showError(String message) {
@@ -79,11 +81,8 @@ class _LoginScreenState extends State<LoginScreen> {
           actions: [
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-              onPressed: () async {
+              onPressed: () {
                 Navigator.of(context).pop(); // close dialog
-                try {
-                  await _authRepository.logConsent("v1.0");
-                } catch (_) {}
                 onConfirmed();
               },
               child: const Text("I Agree & Continue", style: TextStyle(color: Colors.white)),
@@ -158,39 +157,48 @@ class _LoginScreenState extends State<LoginScreen> {
               const Spacer(flex: 1),
 
               // 3. Google Sign-In Button
-              const GoogleSignInButton(),
-              const SizedBox(height: 16),
-
-              // 4. Developer Test Login Button (Bypass)
-              OutlinedButton(
-                onPressed: _isDevLoading ? null : _handleDevTestLogin,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  side: BorderSide(color: Colors.greenAccent.shade400, width: 1.5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: _isDevLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.greenAccent),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.flash_on, color: Colors.greenAccent, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            "🚀 Dev Test Login (Bypass)",
-                            style: TextStyle(
-                              color: Colors.greenAccent.shade400,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
-                      ),
+              GoogleSignInButton(
+                key: _googleSignInKey,
+                onConsentRequired: () {
+                  _showConsentAndProceed(() {
+                    _googleSignInKey.currentState?.triggerSignIn();
+                  });
+                },
               ),
+
+              if (kDebugMode) ...[
+                const SizedBox(height: 16),
+                // 4. Developer Test Login Button (Bypass)
+                OutlinedButton(
+                  onPressed: _isDevLoading ? null : _handleDevTestLogin,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    side: BorderSide(color: Colors.greenAccent.shade400, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: _isDevLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.greenAccent),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.flash_on, color: Colors.greenAccent, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              "🚀 Dev Test Login (Bypass)",
+                              style: TextStyle(
+                                color: Colors.greenAccent.shade400,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ],
 
               /*
               // 5. Company Login & Registration Buttons (Retained for future B2B/Company feature expansion)

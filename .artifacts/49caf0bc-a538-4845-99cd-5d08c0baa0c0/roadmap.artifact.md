@@ -15,26 +15,36 @@ To get to market fast, generate YouTube DevLogs, and acquire real users, **Clibo
 - [x] Spring Boot enterprise backend (`clibobe`) with Strategy Pattern for multi-provider AI routing.
 - [x] Flutter overlay window (`clibofe`) with real-time SSE streaming.
 - [x] PostgreSQL metered usage guardrails and compliance logging.
-- [x] Google Sign-In, Terms of Service & Privacy Policy integration.
+- [x] Google Sign-In, Terms of Service & Privacy Policy integration (`user_consents` logging with multi-cloud IP resolution).
 
 ### Phase 2: Multi-Provider Chat Testing & Stability (Completed)
 *Status: [x] Completed*
 - [x] Context-aware Config Tab with provider dropdowns.
 - [x] Google Gemini Cloud (`gemini-3.5-flash-lite`, `gemini-3.8-flash`) integration.
 - [x] Local Ollama container support and physical device IP retention.
+- [x] OpenAI (`gpt-4o-mini`) and Anthropic Claude (`claude-3-5-sonnet-20241022`) integrations.
 
-### Phase 3: Text-Only Floating Companion MVP & Production Polish (ACTIVE)
-*Status: [/] In Progress*
-- [ ] **Overlay Input Fixes**: Enable native long-press text selection and pasting in overlay `TextField`.
-- [ ] **Chat Scrolling Physics Fix**: Remove nested `SingleChildScrollView` scroll conflicts inside chat bubbles for smooth list scrolling.
-- [ ] **Cozy UI Model Selector**: Redesign provider & model selection with brand logos (Gemini, Ollama, OpenAI badges), friendly display names, and cozy badges instead of raw technical model strings (`gemini-3.5-flash-lite`).
-- [ ] **UI Refinement & Theme Polish**: Apply finished look across floating overlay and main application screens.
-- [ ] **Code Architecture Refactoring**:
-  - Decouple `main.dart` (extract `CliboRobotOverlay` into a dedicated feature module following SRP).
-  - Eliminate code smells, magic strings, and oversized classes across `clibofe` and `clibobe`.
-- [ ] **Monetization & App Store Readiness**:
-  - Implement zero-cost BYOK (Bring Your Own Key) + Free Proxy Tier.
-  - Non-intrusive ad placement strategy (Main app screen banner) / Pro tier setup.
+### Phase 3: Text-Only Floating Companion MVP & Production Polish (Completed)
+*Status: [x] Completed*
+- [x] **Overlay Input & Gesture Fixes**: Long-press text paste menu, smooth chat scrolling, soft keyboard avoidance, safe status bar margins (`topSafeArea + 28px`), and double-tap header minimize gesture.
+- [x] **Overlay Reading Mode**: Full screen window snapping, electric blue scrollbar, and 60fps VSync marquee ticker with interactive robot avatar toggle.
+- [x] **Cozy UI Model Selector**: Provider cards with official brand logos (Gemini, Ollama, OpenAI, Claude, Custom), friendly names, isolated BYOK key inputs, and accordion gateway settings.
+- [x] **Metrics Componentization**: Reusable `UsageMeterCard` with dynamic BYOK/Unlimited emerald progress meter and active provider logo banner.
+- [x] **Code Refactoring**: Decoupled `main.dart` into `CliboRobotOverlay` (0 errors, 0 warnings).
+- [x] **Drawer Cleanup & Chat History**:
+  - Remove redundant side panel items.
+  - Grouped **Chat History & Session Management**: thread grouping, turn count badges, per-turn model provider tracking, cascading PostgreSQL deletion, and **Resume in Overlay** (`RESUME_CHAT` inter-isolate bridge).
+- [x] **Analytics, A/B Testing & Remote Config**:
+  - `firebase_analytics`, `firebase_remote_config`, and `firebase_crashlytics` integrated.
+  - Event tracking for prompt submissions, model switches, BYOK saves, and overlay toggles.
+  - Dynamic Remote Config feature flags and A/B testing parameters with offline fallbacks.
+- [x] **Java 21 Project Loom & Backend Infrastructure**:
+  - Virtual threads enabled (`spring.threads.virtual.enabled=true`).
+  - Bounded HikariCP pool and 512MB-1GB RAM container JVM tuning for low-cost Google Cloud Run hosting.
+  - Server-side environment variable security (`clibobe/.env`) for API keys.
+- [x] **Branding & Native Store Assets**:
+  - Generated native Android launcher icons from `clibo.jpg`.
+  - Updated native app label `Clibo AI`, dark startup window launch background, and white circular splash screen.
 
 ### Phase 4: Post-Launch DevLog Episode 1 - Multi-Modal Vision (Post-Launch Update)
 *Status: [ ] Planned for DevLog Episode*

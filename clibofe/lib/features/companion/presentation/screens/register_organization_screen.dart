@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
-import '../../../../app/service_locator.dart';
-import '../../../../data/repositories/auth/auth_repository.dart';
+import 'package:clibofe/app/service_locator.dart';
+import 'package:clibofe/data/repositories/auth/auth_repository.dart';
 import 'home_screen.dart';
 
 class RegisterOrganizationScreen extends StatefulWidget {

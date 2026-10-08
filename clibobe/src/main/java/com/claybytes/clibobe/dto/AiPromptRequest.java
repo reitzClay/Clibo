@@ -2,6 +2,8 @@ package com.claybytes.clibobe.dto;
 
 public class AiPromptRequest {
     private String prompt;
+    private String cleanPrompt;
+    private String sessionId;
     private String imageBase64;
     private String imageMimeType = "image/jpeg";
     private String audioBase64;
@@ -26,6 +28,22 @@ public class AiPromptRequest {
 
     public void setPrompt(String prompt) {
         this.prompt = prompt;
+    }
+
+    public String getCleanPrompt() {
+        return cleanPrompt;
+    }
+
+    public void setCleanPrompt(String cleanPrompt) {
+        this.cleanPrompt = cleanPrompt;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 
     public String getImageBase64() {

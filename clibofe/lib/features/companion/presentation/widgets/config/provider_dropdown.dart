@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:clibofe/domain/config/ai_provider_config.dart';
+import 'provider_logo.dart';
 
 class ProviderDropdown extends StatelessWidget {
   final AiProviderType selectedType;
@@ -22,7 +23,6 @@ class ProviderDropdown extends StatelessWidget {
         'name': 'Google Gemini',
         'badge': 'Recommended (Free Tier)',
         'description': 'Smart, fast cloud AI powered by Gemini Flash.',
-        'icon': '✨',
         'color': Colors.blueAccent,
       },
       {
@@ -30,7 +30,6 @@ class ProviderDropdown extends StatelessWidget {
         'name': 'Ollama Local',
         'badge': '100% Offline & Private',
         'description': 'Zero token cost. Runs on your computer network.',
-        'icon': '🦙',
         'color': Colors.orangeAccent,
       },
       {
@@ -38,7 +37,6 @@ class ProviderDropdown extends StatelessWidget {
         'name': 'OpenAI (GPT-4o)',
         'badge': 'BYOK Key',
         'description': 'Connect your OpenAI API key directly.',
-        'icon': '🧠',
         'color': const Color(0xFF10B981),
       },
       {
@@ -46,7 +44,6 @@ class ProviderDropdown extends StatelessWidget {
         'name': 'Anthropic Claude',
         'badge': 'BYOK Key',
         'description': 'Connect your Claude API key directly.',
-        'icon': '🎭',
         'color': Colors.purpleAccent,
       },
       {
@@ -54,7 +51,6 @@ class ProviderDropdown extends StatelessWidget {
         'name': 'Custom Endpoint',
         'badge': 'Advanced',
         'description': 'LM Studio, vLLM, or self-hosted LLM endpoints.',
-        'icon': '⚙️',
         'color': Colors.grey,
       },
     ];
@@ -93,15 +89,14 @@ class ProviderDropdown extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: (p['color'] as Color).withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: Text(
-                        p['icon'] as String,
-                        style: const TextStyle(fontSize: 22),
-                      ),
+                      child: ProviderLogo(providerKey: type.id, size: 22),
                     ),
                     const SizedBox(width: 12),
                     Expanded(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'provider_logo.dart';
 
 class OllamaConfigCard extends StatelessWidget {
   final TextEditingController urlController;
@@ -18,7 +19,13 @@ class OllamaConfigCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Ollama Base URL", style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold)),
+        Row(
+          children: [
+            const ProviderLogo(providerKey: 'ollama', size: 22),
+            const SizedBox(width: 8),
+            Text("Ollama Base URL", style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold)),
+          ],
+        ),
         const SizedBox(height: 4),
         Text("Android Emulator: http://10.0.2.2:11434\nDesktop/Web: http://localhost:11434", style: theme.textTheme.small),
         const SizedBox(height: 8),
@@ -35,7 +42,7 @@ class OllamaConfigCard extends StatelessWidget {
         const SizedBox(height: 16),
         Text("Ollama Model Name", style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text("Examples: tinyllama:1.1b, tinyllama:1.1b, mistral", style: theme.textTheme.small),
+        Text("Examples: tinyllama:1.1b, mistral, llama3", style: theme.textTheme.small),
         const SizedBox(height: 8),
         TextField(
           controller: modelController,

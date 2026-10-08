@@ -4,8 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
-import '../../../domain/user/user.dart';
-import 'auth_repository.dart';
+import 'package:clibofe/domain/user/user.dart';
+import 'package:clibofe/data/repositories/auth/auth_repository.dart';
 
 class AuthRepositoryRemote implements AuthRepository {
   static const String webClientId =
@@ -171,6 +171,10 @@ class AuthRepositoryRemote implements AuthRepository {
       }
 
       _currentUser = await _verifyGoogleTokenWithBackend(idToken);
+      if (_currentUser != null && (_currentUser!.pictureUrl == null || _currentUser!.pictureUrl!.isEmpty) && account.photoUrl != null) {
+        _currentUser = _currentUser!.copyWith(pictureUrl: account.photoUrl);
+        await _saveUserSession(_currentUser!, idToken);
+      }
       return _currentUser;
     } catch (e) {
       debugPrint("Google Sign-In Error: $e");
@@ -199,6 +203,7 @@ class AuthRepositoryRemote implements AuthRepository {
   Future<void> _saveUserSession(User user, String token) async {
     await _storage.write(key: _keyAuthToken, value: token);
     await _storage.write(key: _keyUserData, value: jsonEncode(user.toJson()));
+    await logConsent("v1.0");
   }
 
   @override
@@ -211,11 +216,42 @@ class AuthRepositoryRemote implements AuthRepository {
   }
 
   @override
+  Future<bool> deleteAccount() async {
+    try {
+      final String? token = await _storage.read(key: _keyAuthToken);
+      final response = await http.delete(
+        Uri.parse('$baseUrl/user/account'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+
+      _currentUser = null;
+      await _storage.deleteAll();
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint("[AuthRepositoryRemote] Error deleting account: $e");
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+      _currentUser = null;
+      await _storage.deleteAll();
+      return false;
+    }
+  }
+
+  @override
   Future<User?> signInAsDevTestUser() async {
     _currentUser = const User(
       id: 999,
       email: 'dev@clibo.ai',
       name: 'Developer Tester',
+      pictureUrl: 'https://api.dicebear.com/7.x/bottts/png?seed=CliboDev',
       userTier: 'PRO',
       systemRole: 'ADMIN',
       token: 'dev_mock_token_999',
@@ -228,7 +264,7 @@ class AuthRepositoryRemote implements AuthRepository {
   Future<void> logConsent(String policyVersion) async {
     final String? token = await _storage.read(key: _keyAuthToken);
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse('$baseUrl/auth/consent'),
         headers: {
           'Content-Type': 'application/json',
@@ -236,6 +272,9 @@ class AuthRepositoryRemote implements AuthRepository {
         },
         body: jsonEncode({'policyVersion': policyVersion}),
       );
-    } catch (_) {}
+      debugPrint("[AuthRepositoryRemote] Consent logged status: ${response.statusCode}");
+    } catch (e) {
+      debugPrint("[AuthRepositoryRemote] Error logging consent: $e");
+    }
   }
 }

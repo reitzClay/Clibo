@@ -5,6 +5,7 @@ import 'package:clibofe/app/service_locator.dart';
 import 'package:clibofe/data/services/config_service.dart';
 import 'package:clibofe/domain/config/ai_provider_config.dart';
 import 'package:clibofe/interface/clibo_aI_client.dart';
+import 'package:clibofe/features/companion/presentation/widgets/config/provider_logo.dart';
 import 'package:clibofe/features/companion/presentation/widgets/metrics/usage_meter_card.dart';
 
 class MetricsTab extends StatefulWidget {
@@ -65,7 +66,7 @@ class _MetricsTabState extends State<MetricsTab> {
     final bool isLocalOrByok = config != null &&
         (config.providerType == AiProviderType.ollama ||
             config.providerType == AiProviderType.custom ||
-            config.byokApiKey.trim().isNotEmpty);
+            config.isBYOK);
 
     final String userTier = _usageMetrics?['userTier']?.toString() ?? (isLocalOrByok ? 'UNLIMITED' : 'FREE');
     final int msgUsed = _usageMetrics?['textMessagesUsed'] ?? 0;
@@ -123,9 +124,9 @@ class _MetricsTabState extends State<MetricsTab> {
               ),
               child: Row(
                 children: [
-                  Text(
-                    config.providerType == AiProviderType.ollama ? "🦙" : "✨",
-                    style: const TextStyle(fontSize: 20),
+                  ProviderLogo(
+                    providerKey: config.providerType.label,
+                    size: 24,
                   ),
                   const SizedBox(width: 10),
                   Expanded(

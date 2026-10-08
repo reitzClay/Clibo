@@ -39,9 +39,10 @@ public class AuthController {
             if (tokenPayload != null) {
                 String email = tokenPayload.getEmail();
                 String name = (String) tokenPayload.get("name");
+                String pictureUrl = (String) tokenPayload.get("picture");
 
                 // Route through our database service layer
-                User user = userService.processUserLogin(email, name);
+                User user = userService.processUserLogin(email, name, pictureUrl);
 
                 // Return authenticated profile data back to Flutter
                 return ResponseEntity.ok(user);

@@ -58,8 +58,9 @@ public class GeminiAiService implements AiProviderService {
             String customKey = (request != null) ? request.getByokApiKey() : null;
             Client client = getClient(customKey);
 
-            String userPrompt = (prompt != null && !prompt.isBlank()) ? prompt : "Describe what you see on this screen in detail.";
-            String systemPrefix = "[System: You are Clibo AI Companion, a helpful context-aware assistant developed for ClayBytes (https://claybytes.nl/), powered by Google Gemini.]\n";
+            String userPrompt = (prompt != null && !prompt.isBlank()) ? prompt : "Describe in detail.";
+//            String systemPrefix = "[Sytem: You are Clibo AI Companion, a helpful and context-aware AI assistant powered by Google Gemini.]\n";
+            String systemPrefix = "[System: You are Clibo AI Companion, a helpful and context-aware AI assistant powered by Google Gemini..]\n";
             String fullPrompt = systemPrefix + userPrompt;
 
             Object contentInput = fullPrompt;
@@ -121,7 +122,11 @@ public class GeminiAiService implements AiProviderService {
 
             try {
                 guardrailService.incrementUserUsage(user, modality);
-                chatHistoryService.logChatInteraction(user, userPrompt, output);
+                String dbPrompt = (request != null && request.getCleanPrompt() != null && !request.getCleanPrompt().isBlank())
+                        ? request.getCleanPrompt()
+                        : userPrompt;
+                String sessId = (request != null) ? request.getSessionId() : null;
+                chatHistoryService.logChatInteraction(user, dbPrompt, output, "Google Gemini", sessId);
             } catch (Exception e) {
                 logger.error("Failed to increment usage or log chat for user {}: {}", user.getEmail(), e.getMessage());
             }
