@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
-import '../../../../app/service_locator.dart';
-import '../../../../data/repositories/auth/auth_repository.dart';
-import '../../../../domain/user/user.dart';
+import 'package:clibofe/app/service_locator.dart';
+import 'package:clibofe/data/repositories/auth/auth_repository.dart';
+import 'package:clibofe/domain/user/user.dart';
 import '../tabs/config_tab.dart';
 import '../tabs/history_tab.dart';
 import '../tabs/metrics_tab.dart';
@@ -59,6 +59,58 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
+  }
+
+  Future<void> _handleDeleteAccount() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text("Delete Account & Data", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+        content: const Text(
+          "Are you sure you want to permanently delete your account? All your chat history, usage data, and account records will be permanently erased. This action cannot be undone.",
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel", style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Permanently Delete", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        if (await FlutterOverlayWindow.isActive()) {
+          await FlutterOverlayWindow.shareData("CLEAR_CHAT");
+          await FlutterOverlayWindow.closeOverlay();
+        }
+      } catch (_) {}
+
+      final bool success = await _authRepository.deleteAccount();
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? "Your account and data have been permanently deleted."
+                : "Account erased locally.",
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    }
   }
 
   Future<void> _toggleOverlay() async {
@@ -272,19 +324,35 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: ListTile(
-                  leading: Icon(LucideIcons.logOut, color: theme.colorScheme.destructive),
-                  title: Text(
-                    "Logout",
-                    style: theme.textTheme.p.copyWith(
-                      color: theme.colorScheme.destructive,
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: Icon(LucideIcons.logOut, color: theme.colorScheme.destructive),
+                      title: Text(
+                        "Logout",
+                        style: theme.textTheme.p.copyWith(
+                          color: theme.colorScheme.destructive,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _handleLogout();
+                      },
                     ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _handleLogout();
-                  },
+                    ListTile(
+                      leading: const Icon(Icons.delete_forever_rounded, color: Colors.redAccent),
+                      title: const Text(
+                        "Delete Account & Data",
+                        style: TextStyle(color: Colors.redAccent, fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _handleDeleteAccount();
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),

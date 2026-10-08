@@ -1,4 +1,4 @@
-import '../../../domain/user/user.dart';
+import 'package:clibofe/domain/user/user.dart';
 
 abstract class AuthRepository {
   /// Signs in with Email and Password
@@ -24,6 +24,9 @@ abstract class AuthRepository {
 
   /// Signs out user and clears local tokens
   Future<void> signOut();
+
+  /// Permanently deletes user account and erases all associated data
+  Future<bool> deleteAccount();
 
   /// Gets currently authenticated user profile
   Future<User?> getCurrentUser();

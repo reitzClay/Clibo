@@ -12,6 +12,9 @@ class MockAuthRepository implements AuthRepository {
   Future<void> signOut() async {}
 
   @override
+  Future<bool> deleteAccount() async => true;
+
+  @override
   Future<User?> signInWithEmail(String email, String password) async => null;
 
   @override

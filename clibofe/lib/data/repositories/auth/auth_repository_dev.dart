@@ -1,17 +1,8 @@
-import '../../../domain/user/user.dart';
-import 'auth_repository.dart';
+import 'package:clibofe/domain/user/user.dart';
+import 'package:clibofe/data/repositories/auth/auth_repository.dart';
 
 class AuthRepositoryDev implements AuthRepository {
   User? _mockUser;
-
-  @override
-  Future<User?> getCurrentUser() async => _mockUser;
-
-  @override
-  Future<bool> trySilentSignIn() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _mockUser != null;
-  }
 
   @override
   Future<User?> signInWithEmail(String email, String password) async {
@@ -33,20 +24,6 @@ class AuthRepositoryDev implements AuthRepository {
   }
 
   @override
-  Future<User?> signInWithGoogle() async {
-    await Future.delayed(const Duration(milliseconds: 1000));
-    _mockUser = const User(
-      id: 2,
-      email: 'clayton@clibo.ai',
-      name: 'Clayton',
-      userTier: 'PRO',
-      systemRole: 'USER',
-      token: 'mock_google_jwt_456',
-    );
-    return _mockUser;
-  }
-
-  @override
   Future<Map<String, dynamic>> registerOrganization({
     required String name,
     required String domain,
@@ -62,9 +39,38 @@ class AuthRepositoryDev implements AuthRepository {
   }
 
   @override
+  Future<User?> signInWithGoogle() async {
+    await Future.delayed(const Duration(milliseconds: 1000));
+    _mockUser = const User(
+      id: 2,
+      email: 'clayton@clibo.ai',
+      name: 'Clayton',
+      userTier: 'PRO',
+      systemRole: 'USER',
+      token: 'mock_google_jwt_456',
+    );
+    return _mockUser;
+  }
+
+  @override
+  Future<bool> trySilentSignIn() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    return _mockUser != null;
+  }
+
+  @override
   Future<void> signOut() async {
     _mockUser = null;
   }
+
+  @override
+  Future<bool> deleteAccount() async {
+    _mockUser = null;
+    return true;
+  }
+
+  @override
+  Future<User?> getCurrentUser() async => _mockUser;
 
   @override
   Future<User?> signInAsDevTestUser() async {

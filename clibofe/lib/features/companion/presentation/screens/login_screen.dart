@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
-import '../../../../app/service_locator.dart';
-import '../../../../data/repositories/auth/auth_repository.dart';
+import 'package:clibofe/app/service_locator.dart';
+import 'package:clibofe/data/repositories/auth/auth_repository.dart';
 import '../widgets/google_sign_in_button.dart';
 import 'home_screen.dart';
 // import 'register_organization_screen.dart'; // Retained for future B2B/Company feature expansion

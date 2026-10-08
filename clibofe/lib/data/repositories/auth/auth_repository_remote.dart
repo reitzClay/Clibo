@@ -4,8 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
-import '../../../domain/user/user.dart';
-import 'auth_repository.dart';
+import 'package:clibofe/domain/user/user.dart';
+import 'package:clibofe/data/repositories/auth/auth_repository.dart';
 
 class AuthRepositoryRemote implements AuthRepository {
   static const String webClientId =
@@ -213,6 +213,36 @@ class AuthRepositoryRemote implements AuthRepository {
     } catch (_) {}
     _currentUser = null;
     await _storage.deleteAll();
+  }
+
+  @override
+  Future<bool> deleteAccount() async {
+    try {
+      final String? token = await _storage.read(key: _keyAuthToken);
+      final response = await http.delete(
+        Uri.parse('$baseUrl/user/account'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+
+      _currentUser = null;
+      await _storage.deleteAll();
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint("[AuthRepositoryRemote] Error deleting account: $e");
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+      _currentUser = null;
+      await _storage.deleteAll();
+      return false;
+    }
   }
 
   @override
