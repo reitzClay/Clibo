@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'provider_logo.dart';
 
 class OllamaConfigCard extends StatelessWidget {
   final TextEditingController urlController;
@@ -20,13 +21,7 @@ class OllamaConfigCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Image.asset(
-              'assets/images/ollama.png',
-              width: 22,
-              height: 22,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Text('🦙', style: TextStyle(fontSize: 18)),
-            ),
+            const ProviderLogo(providerKey: 'ollama', size: 22),
             const SizedBox(width: 8),
             Text("Ollama Base URL", style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold)),
           ],

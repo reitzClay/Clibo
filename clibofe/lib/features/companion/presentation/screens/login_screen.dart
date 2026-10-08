@@ -147,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // 2. Subtitle Headers
               const Text(
-                "Welcome to Clibo AI Companion, developed by ClayBytes",
+                "Welcome to Clibo AI Companion",
                 style: TextStyle(
                   color: Colors.white60,
                   fontSize: 14,

@@ -52,6 +52,7 @@ class ChatSessionItem {
 
   String get lastPrompt => messages.isNotEmpty ? messages.last.prompt : title;
   String get lastResponse => messages.isNotEmpty ? messages.last.response : '';
+  String get initialProvider => messages.isNotEmpty ? messages.first.provider : provider;
   String get activeProvider => messages.isNotEmpty ? messages.last.provider : provider;
   int get messageCount => messages.length;
 
@@ -64,31 +65,32 @@ class ChatSessionItem {
       };
 
   factory ChatSessionItem.fromJson(Map<String, dynamic> json) {
-    final String sessionProvider = json['provider']?.toString() ?? 'Google Gemini';
+    final String defaultProvider = json['provider']?.toString() ?? 'Google Gemini';
 
     List<ChatMessagePair> msgs = [];
     if (json['messages'] is List) {
       msgs = (json['messages'] as List)
-          .map((m) => ChatMessagePair.fromJson(m as Map<String, dynamic>, defaultProvider: sessionProvider))
+          .map((m) => ChatMessagePair.fromJson(m as Map<String, dynamic>, defaultProvider: defaultProvider))
           .toList();
     } else if (json['prompt'] != null || json['response'] != null) {
       msgs.add(ChatMessagePair(
         prompt: json['prompt']?.toString() ?? '',
         response: json['response']?.toString() ?? '',
-        provider: sessionProvider,
+        provider: defaultProvider,
         timestamp: json['timestamp'] != null
             ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()
             : DateTime.now(),
       ));
     }
 
+    final String initialProvider = msgs.isNotEmpty ? msgs.first.provider : defaultProvider;
     final String titleStr = json['title']?.toString() ??
         (msgs.isNotEmpty ? msgs.first.prompt : 'Chat Session');
 
     return ChatSessionItem(
       id: json['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
       title: titleStr,
-      provider: msgs.isNotEmpty ? msgs.last.provider : sessionProvider,
+      provider: initialProvider,
       timestamp: json['timestamp'] != null
           ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -143,44 +145,107 @@ class ChatHistoryService {
     }
   }
 
-  String _sessionDedupeKey(ChatSessionItem s) {
-    return s.title.trim().toLowerCase();
-  }
-
-  /// Deduplicates sessions by title key, merging message threads while preserving individual message providers.
+  /// Deduplicates sessions by ID and merges/removes fragment sessions whose messages
+  /// are already subsumed inside a larger multi-turn conversation session.
   List<ChatSessionItem> _deduplicateSessions(List<ChatSessionItem> rawList) {
+    if (rawList.isEmpty) return [];
+
+    // 1. Group & merge by exact ID first
     final Map<String, ChatSessionItem> sessionMap = {};
 
     for (final session in rawList) {
-      final String dedupeKey = _sessionDedupeKey(session);
+      final String idKey = session.id.trim();
+      if (idKey.isEmpty) continue;
 
-      if (sessionMap.containsKey(dedupeKey)) {
-        final existing = sessionMap[dedupeKey]!;
+      if (sessionMap.containsKey(idKey)) {
+        final existing = sessionMap[idKey]!;
         final mergedMsgs = List<ChatMessagePair>.from(existing.messages);
         for (final msg in session.messages) {
-          if (!mergedMsgs.any((m) => m.prompt.trim() == msg.prompt.trim() && m.response.trim() == msg.response.trim())) {
+          if (!mergedMsgs.any((m) =>
+              m.prompt.trim() == msg.prompt.trim() &&
+              m.response.trim() == msg.response.trim())) {
             mergedMsgs.add(msg);
           }
         }
 
-        // Prefer numeric backend ID (e.g. "2" instead of "1728300000000")
-        final String preferredId = (existing.id.length <= session.id.length) ? existing.id : session.id;
+        final String initialProvider = existing.messages.isNotEmpty
+            ? existing.messages.first.provider
+            : (session.messages.isNotEmpty
+                ? session.messages.first.provider
+                : (existing.provider.isNotEmpty ? existing.provider : session.provider));
 
-        sessionMap[dedupeKey] = ChatSessionItem(
-          id: preferredId,
+        sessionMap[idKey] = ChatSessionItem(
+          id: existing.id,
           title: existing.title.isNotEmpty ? existing.title : session.title,
-          provider: mergedMsgs.isNotEmpty ? mergedMsgs.last.provider : session.provider,
+          provider: initialProvider,
           timestamp: session.timestamp.isAfter(existing.timestamp) ? session.timestamp : existing.timestamp,
           messages: mergedMsgs,
         );
       } else {
-        sessionMap[dedupeKey] = session;
+        sessionMap[idKey] = session;
       }
     }
 
-    final result = sessionMap.values.toList();
-    result.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return result;
+    final List<ChatSessionItem> sessions = sessionMap.values.toList();
+
+    // 2. Sort by message count descending so largest multi-turn sessions are evaluated first
+    sessions.sort((a, b) => b.messages.length.compareTo(a.messages.length));
+
+    final List<ChatSessionItem> consolidated = [];
+
+    for (final candidate in sessions) {
+      if (candidate.messages.isEmpty) continue;
+
+      bool isSubsumed = false;
+
+      for (int i = 0; i < consolidated.length; i++) {
+        final master = consolidated[i];
+
+        // Count how many messages in candidate match messages in master
+        final int matchingCount = candidate.messages.where((cMsg) {
+          return master.messages.any((mMsg) =>
+              mMsg.prompt.trim().toLowerCase() == cMsg.prompt.trim().toLowerCase() &&
+              mMsg.response.trim().toLowerCase() == cMsg.response.trim().toLowerCase());
+        }).length;
+
+        // If candidate's messages are completely contained inside master -> discard candidate fragment
+        if (matchingCount == candidate.messages.length) {
+          isSubsumed = true;
+          break;
+        }
+
+        // If candidate shares messages with master, merge any new messages from candidate into master
+        if (matchingCount > 0) {
+          final updatedMasterMsgs = List<ChatMessagePair>.from(master.messages);
+          for (final cMsg in candidate.messages) {
+            if (!updatedMasterMsgs.any((m) =>
+                m.prompt.trim().toLowerCase() == cMsg.prompt.trim().toLowerCase() &&
+                m.response.trim().toLowerCase() == cMsg.response.trim().toLowerCase())) {
+              updatedMasterMsgs.add(cMsg);
+            }
+          }
+
+          consolidated[i] = ChatSessionItem(
+            id: master.id,
+            title: master.title,
+            provider: master.provider,
+            timestamp: candidate.timestamp.isAfter(master.timestamp) ? candidate.timestamp : master.timestamp,
+            messages: updatedMasterMsgs,
+          );
+
+          isSubsumed = true;
+          break;
+        }
+      }
+
+      if (!isSubsumed) {
+        consolidated.add(candidate);
+      }
+    }
+
+    // Sort final list by timestamp descending (most recent conversation first)
+    consolidated.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return consolidated;
   }
 
   /// Loads chat history from local storage and merges/deduplicates with backend history if available.
@@ -231,13 +296,6 @@ class ChatHistoryService {
         if (index != -1) {
           targetSession = localList.removeAt(index);
         }
-      } else if (localList.isNotEmpty) {
-        final String promptKey = prompt.trim().toLowerCase();
-        final index = localList.indexWhere((s) => s.title.trim().toLowerCase() == promptKey);
-        if (index != -1 && now.difference(localList[index].timestamp).inMinutes < 30) {
-          targetSession = localList.removeAt(index);
-          _activeSessionId = targetSession.id;
-        }
       }
 
       if (targetSession != null) {
@@ -245,10 +303,14 @@ class ChatHistoryService {
         if (!updatedMessages.any((m) => m.prompt.trim() == prompt.trim() && m.response.trim() == response.trim())) {
           updatedMessages.add(newPair);
         }
+        final initialProvider = targetSession.messages.isNotEmpty
+            ? targetSession.messages.first.provider
+            : targetSession.provider;
+
         final updatedSession = ChatSessionItem(
           id: targetSession.id,
           title: targetSession.title,
-          provider: provider,
+          provider: initialProvider,
           timestamp: now,
           messages: updatedMessages,
         );

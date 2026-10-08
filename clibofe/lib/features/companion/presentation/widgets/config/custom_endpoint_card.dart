@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'provider_logo.dart';
 
 class CustomEndpointCard extends StatelessWidget {
   final TextEditingController urlController;
@@ -22,13 +23,7 @@ class CustomEndpointCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Image.asset(
-              'assets/images/custom.png',
-              width: 20,
-              height: 20,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Text('⚙️', style: TextStyle(fontSize: 18)),
-            ),
+            const ProviderLogo(providerKey: 'custom', size: 22),
             const SizedBox(width: 8),
             Text("Custom Endpoint Base URL", style: theme.textTheme.p.copyWith(fontWeight: FontWeight.bold)),
           ],

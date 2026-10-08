@@ -14,7 +14,11 @@ class ConfigService {
     final backendUrl = await _storage.read(key: 'clibo_backend_url');
     final ollamaUrl = await _storage.read(key: 'clibo_ollama_url');
     final ollamaModel = await _storage.read(key: 'clibo_ollama_model');
-    final byokKey = await _storage.read(key: 'clibo_byok_key');
+    final legacyByokKey = await _storage.read(key: 'clibo_byok_key') ?? '';
+    final geminiKey = await _storage.read(key: 'clibo_gemini_key') ?? legacyByokKey;
+    final openaiKey = await _storage.read(key: 'clibo_openai_key') ?? '';
+    final claudeKey = await _storage.read(key: 'clibo_claude_key') ?? '';
+    final customKey = await _storage.read(key: 'clibo_custom_key') ?? '';
     final customUrl = await _storage.read(key: 'clibo_custom_provider_url');
     final customModel = await _storage.read(key: 'clibo_custom_model');
 
@@ -23,7 +27,10 @@ class ConfigService {
       backendUrl: backendUrl ?? '',
       ollamaBaseUrl: ollamaUrl ?? '',
       ollamaModel: ollamaModel ?? '',
-      byokApiKey: byokKey ?? '',
+      geminiApiKey: geminiKey,
+      openaiApiKey: openaiKey,
+      claudeApiKey: claudeKey,
+      customApiKey: customKey,
       customBaseUrl: customUrl ?? '',
       customModel: customModel ?? '',
     );

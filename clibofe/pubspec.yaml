@@ -59,7 +59,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
-  image_path: "assets/images/claybytes.png"
+  image_path: "assets/images/clibo.jpg"
   min_sdk_android: 21
 
 # For information on the generic Dart part of this file, see the
@@ -75,7 +75,7 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/images/claybytes.png
+    - assets/images/clibo.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

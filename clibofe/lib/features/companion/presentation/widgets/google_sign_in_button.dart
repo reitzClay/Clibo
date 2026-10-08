@@ -91,12 +91,12 @@ class GoogleSignInButtonState extends State<GoogleSignInButton> {
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Clean, robust Google 'G' icon adhering to Google Identity / Material guidelines
-                Container(
-                  width: 20,
-                  height: 20,
-                  alignment: Alignment.center,
-                  child: const Text(
+                Image.asset(
+                  'assets/images/google.png',
+                  width: 22,
+                  height: 22,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Text(
                     'G',
                     style: TextStyle(
                       fontSize: 18,

@@ -176,7 +176,42 @@ class _CliboRobotOverlayState extends State<CliboRobotOverlay> {
       final historyService = locator<ChatHistoryService>();
       final analytics = locator<AnalyticsService>();
 
-      final responseText = await aiClient.generateResponse(prompt);
+      // Build conversation context from previous turns if continuing or resuming a chat session
+      String fullPromptWithContext = prompt;
+      if (_messages.length > 1) {
+        final historyBuffer = StringBuffer();
+        historyBuffer.writeln("Previous Conversation Context:");
+
+        final pastMsgs = _messages.sublist(1).reversed.toList();
+        int includedCount = 0;
+
+        for (final msg in pastMsgs) {
+          final bool isAi = msg['isAi'] == true;
+          final String text = msg['text']?.toString() ?? '';
+          if (text.isEmpty ||
+              text.startsWith('Error') ||
+              text.startsWith('How can I help you today?') ||
+              text.startsWith('Resumed session.')) continue;
+
+          if (isAi) {
+            historyBuffer.writeln("Assistant: $text");
+          } else {
+            historyBuffer.writeln("User: $text");
+          }
+          includedCount++;
+        }
+
+        if (includedCount > 0) {
+          historyBuffer.writeln("\nCurrent User Prompt:\n$prompt");
+          fullPromptWithContext = historyBuffer.toString();
+        }
+      }
+
+      final responseText = await aiClient.generateResponse(
+        fullPromptWithContext,
+        cleanPrompt: prompt,
+        sessionId: historyService.activeSessionId,
+      );
       final config = await configService.loadConfig();
 
       analytics.logPromptSent(

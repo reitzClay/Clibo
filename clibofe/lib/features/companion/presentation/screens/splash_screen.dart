@@ -112,7 +112,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     child: Container(
                       margin: const EdgeInsets.all(3),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF12121A),
+                        color: Colors.white,
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -122,8 +122,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                             padding: const EdgeInsets.all(8.0),
                             child: Image.asset(
                               'assets/images/claybytes.png',
-                              color: Colors.white,
-                              colorBlendMode: BlendMode.srcIn,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
                                 return const Icon(
@@ -143,7 +141,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             ),
             const SizedBox(height: 36),
             const Text(
-              "ClayBytes",
+              "CLIBO",
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 30,
@@ -153,7 +151,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             ),
             const SizedBox(height: 6),
             Text(
-              "CLIBO AI COMPANION",
+              "AI COMPANION",
               style: TextStyle(
                 color: Colors.cyanAccent.shade200.withValues(alpha: 0.85),
                 fontSize: 11,

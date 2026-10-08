@@ -6,6 +6,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import 'package:clibofe/app/service_locator.dart';
 import 'package:clibofe/data/services/chat_history_service.dart';
+import 'package:clibofe/features/companion/presentation/widgets/config/provider_logo.dart';
 
 class HistoryTab extends StatefulWidget {
   final TabController? tabController;
@@ -31,7 +32,7 @@ class _HistoryTabState extends State<HistoryTab> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     widget.tabController?.addListener(_handleTabChange);
     _loadHistory();
-    _searchController.addListener(_applyFilters);
+    _searchController.addListener(() => setState(() => _applyFilters()));
   }
 
   @override
@@ -57,7 +58,11 @@ class _HistoryTabState extends State<HistoryTab> with WidgetsBindingObserver {
 
   Future<void> _loadHistory() async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+
+    // Only show full-screen spinner if no cached sessions exist yet
+    if (_allSessions.isEmpty) {
+      setState(() => _isLoading = true);
+    }
 
     try {
       final sessions = await _historyService.loadHistory();
@@ -78,20 +83,18 @@ class _HistoryTabState extends State<HistoryTab> with WidgetsBindingObserver {
 
   void _applyFilters() {
     final query = _searchController.text.toLowerCase().trim();
-    setState(() {
-      _filteredSessions = _allSessions.where((session) {
-        final matchesQuery = query.isEmpty ||
-            session.title.toLowerCase().contains(query) ||
-            session.messages.any((m) =>
-                m.prompt.toLowerCase().contains(query) ||
-                m.response.toLowerCase().contains(query));
+    _filteredSessions = _allSessions.where((session) {
+      final matchesQuery = query.isEmpty ||
+          session.title.toLowerCase().contains(query) ||
+          session.messages.any((m) =>
+              m.prompt.toLowerCase().contains(query) ||
+              m.response.toLowerCase().contains(query));
 
-        final matchesFilter = _selectedFilter == 'All' ||
-            session.provider.toLowerCase().contains(_selectedFilter.toLowerCase());
+      final matchesFilter = _selectedFilter == 'All' ||
+          session.provider.toLowerCase().contains(_selectedFilter.toLowerCase());
 
-        return matchesQuery && matchesFilter;
-      }).toList();
-    });
+      return matchesQuery && matchesFilter;
+    }).toList();
   }
 
   Future<void> _deleteSession(String id) async {
@@ -174,23 +177,7 @@ class _HistoryTabState extends State<HistoryTab> with WidgetsBindingObserver {
     }
   }
 
-  String _getProviderAssetFromLabel(String providerLabel) {
-    final lower = providerLabel.toLowerCase();
-    if (lower.contains('gemini')) return 'assets/images/gemini.png';
-    if (lower.contains('ollama')) return 'assets/images/ollama.png';
-    if (lower.contains('openai')) return 'assets/images/openai.png';
-    if (lower.contains('claude') || lower.contains('anthropic')) return 'assets/images/claude.png';
-    return 'assets/images/custom.png';
-  }
 
-  String _getProviderFallbackIconFromLabel(String providerLabel) {
-    final lower = providerLabel.toLowerCase();
-    if (lower.contains('gemini')) return '✨';
-    if (lower.contains('ollama')) return '🦙';
-    if (lower.contains('openai')) return '🧠';
-    if (lower.contains('claude') || lower.contains('anthropic')) return '🎭';
-    return '⚙️';
-  }
 
   void _showSessionDetailSheet(ChatSessionItem session) {
     final StringBuffer fullCopyText = StringBuffer();
@@ -221,15 +208,9 @@ class _HistoryTabState extends State<HistoryTab> with WidgetsBindingObserver {
                   Expanded(
                     child: Row(
                       children: [
-                        Image.asset(
-                          _getProviderAssetFromLabel(session.activeProvider),
-                          width: 22,
-                          height: 22,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => Text(
-                            _getProviderFallbackIconFromLabel(session.activeProvider),
-                            style: const TextStyle(fontSize: 20),
-                          ),
+                        ProviderLogo(
+                          providerKey: session.initialProvider,
+                          size: 22,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -491,15 +472,9 @@ class _HistoryTabState extends State<HistoryTab> with WidgetsBindingObserver {
                               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                               leading: CircleAvatar(
                                 backgroundColor: Colors.blueAccent.withValues(alpha: 0.15),
-                                child: Image.asset(
-                                  _getProviderAssetFromLabel(session.activeProvider),
-                                  width: 22,
-                                  height: 22,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => Text(
-                                    _getProviderFallbackIconFromLabel(session.activeProvider),
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
+                                child: ProviderLogo(
+                                  providerKey: session.initialProvider,
+                                  size: 20,
                                 ),
                               ),
                               title: Row(

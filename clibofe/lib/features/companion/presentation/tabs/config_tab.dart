@@ -11,6 +11,7 @@ import 'package:clibofe/features/companion/presentation/widgets/config/connectio
 import 'package:clibofe/features/companion/presentation/widgets/config/custom_endpoint_card.dart';
 import 'package:clibofe/features/companion/presentation/widgets/config/ollama_config_card.dart';
 import 'package:clibofe/features/companion/presentation/widgets/config/provider_dropdown.dart';
+import 'package:clibofe/features/companion/presentation/widgets/config/provider_logo.dart';
 
 class ConfigTab extends StatefulWidget {
   final VoidCallback? onSettingsSaved;
@@ -30,7 +31,10 @@ class _ConfigTabState extends State<ConfigTab> {
   final TextEditingController _backendUrlController = TextEditingController();
   final TextEditingController _ollamaUrlController = TextEditingController();
   final TextEditingController _ollamaModelController = TextEditingController();
-  final TextEditingController _byokKeyController = TextEditingController();
+  final TextEditingController _geminiKeyController = TextEditingController();
+  final TextEditingController _openaiKeyController = TextEditingController();
+  final TextEditingController _claudeKeyController = TextEditingController();
+  final TextEditingController _customKeyController = TextEditingController();
   final TextEditingController _customUrlController = TextEditingController();
   final TextEditingController _customModelController = TextEditingController();
 
@@ -52,7 +56,10 @@ class _ConfigTabState extends State<ConfigTab> {
         _backendUrlController.text = config.backendUrl;
         _ollamaUrlController.text = config.ollamaBaseUrl;
         _ollamaModelController.text = config.ollamaModel;
-        _byokKeyController.text = config.byokApiKey;
+        _geminiKeyController.text = config.geminiApiKey;
+        _openaiKeyController.text = config.openaiApiKey;
+        _claudeKeyController.text = config.claudeApiKey;
+        _customKeyController.text = config.customApiKey;
         _customUrlController.text = config.customBaseUrl;
         _customModelController.text = config.customModel;
       });
@@ -96,7 +103,10 @@ class _ConfigTabState extends State<ConfigTab> {
       backendUrl: _backendUrlController.text.trim(),
       ollamaBaseUrl: _ollamaUrlController.text.trim(),
       ollamaModel: _ollamaModelController.text.trim(),
-      byokApiKey: _byokKeyController.text.trim(),
+      geminiApiKey: _geminiKeyController.text.trim(),
+      openaiApiKey: _openaiKeyController.text.trim(),
+      claudeApiKey: _claudeKeyController.text.trim(),
+      customApiKey: _customKeyController.text.trim(),
       customBaseUrl: _customUrlController.text.trim(),
       customModel: _customModelController.text.trim(),
     );
@@ -105,7 +115,7 @@ class _ConfigTabState extends State<ConfigTab> {
 
     final analytics = locator<AnalyticsService>();
     analytics.logModelChanged(newProvider: _selectedProvider.label);
-    if (_byokKeyController.text.trim().isNotEmpty) {
+    if (updatedConfig.activeApiKey.isNotEmpty) {
       analytics.logBYOKSaved(provider: _selectedProvider.label);
     }
 
@@ -128,7 +138,10 @@ class _ConfigTabState extends State<ConfigTab> {
     _backendUrlController.dispose();
     _ollamaUrlController.dispose();
     _ollamaModelController.dispose();
-    _byokKeyController.dispose();
+    _geminiKeyController.dispose();
+    _openaiKeyController.dispose();
+    _claudeKeyController.dispose();
+    _customKeyController.dispose();
     _customUrlController.dispose();
     _customModelController.dispose();
     super.dispose();
@@ -189,17 +202,11 @@ class _ConfigTabState extends State<ConfigTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  const Row(
                     children: [
-                      Image.asset(
-                        'assets/images/gemini.png',
-                        width: 22,
-                        height: 22,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Text("✨", style: TextStyle(fontSize: 18)),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text("Google Gemini Cloud", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      ProviderLogo(providerKey: 'gemini', size: 22),
+                      SizedBox(width: 8),
+                      Text("Google Gemini Cloud", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -211,9 +218,8 @@ class _ConfigTabState extends State<ConfigTab> {
                   ByokKeyInput(
                     label: "Google Gemini API Key (Optional BYOK)",
                     hintText: "AIzaSy...",
-                    controller: _byokKeyController,
-                    assetImage: 'assets/images/gemini.png',
-                    fallbackIcon: '✨',
+                    controller: _geminiKeyController,
+                    providerKey: 'gemini',
                   ),
                 ],
               ),
@@ -227,23 +233,21 @@ class _ConfigTabState extends State<ConfigTab> {
             ByokKeyInput(
               label: "OpenAI API Key (sk-...)",
               hintText: "sk-proj-...",
-              controller: _byokKeyController,
-              assetImage: 'assets/images/openai.png',
-              fallbackIcon: '🧠',
+              controller: _openaiKeyController,
+              providerKey: 'openai',
             )
           ] else if (_selectedProvider == AiProviderType.claude) ...[
             ByokKeyInput(
               label: "Anthropic Claude API Key (sk-ant-...)",
               hintText: "sk-ant-api...",
-              controller: _byokKeyController,
-              assetImage: 'assets/images/claude.png',
-              fallbackIcon: '🎭',
+              controller: _claudeKeyController,
+              providerKey: 'claude',
             )
           ] else if (_selectedProvider == AiProviderType.custom) ...[
             CustomEndpointCard(
               urlController: _customUrlController,
               modelController: _customModelController,
-              apiKeyController: _byokKeyController,
+              apiKeyController: _customKeyController,
             )
           ],
 
@@ -272,13 +276,12 @@ class _ConfigTabState extends State<ConfigTab> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _backendUrlController,
-                        style: TextStyle(color: theme.colorScheme.foreground, fontSize: 14),
+                        style: TextStyle(color: theme.colorScheme.foreground),
                         decoration: InputDecoration(
-                          hintText: "http://192.168.1.x:8080/api/v1",
+                          hintText: "http://10.0.2.2:8080/api/v1",
                           filled: true,
                           fillColor: theme.colorScheme.card,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
                       ),
                     ],
@@ -287,20 +290,25 @@ class _ConfigTabState extends State<ConfigTab> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
 
-          const SizedBox(height: 24),
-          ElevatedButton(
+          // Save Settings Button
+          ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.primaryForeground,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              minimumSize: const Size.fromHeight(50),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               elevation: 2,
             ),
+            icon: const Icon(Icons.save_rounded, size: 20),
+            label: const Text(
+              "Save AI Preferences",
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
             onPressed: _saveSettings,
-            child: const Text("Save Preferences", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
         ],
       ),
     );

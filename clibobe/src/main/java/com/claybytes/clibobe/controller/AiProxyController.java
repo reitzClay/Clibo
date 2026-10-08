@@ -33,7 +33,7 @@ public class AiProxyController {
 
     private static final Logger logger = LoggerFactory.getLogger(AiProxyController.class);
 
-    private final String defaultAiProvider = System.getenv().getOrDefault("AI_PROVIDER", "ollama");
+    private final String defaultAiProvider = System.getenv().getOrDefault("AI_PROVIDER", "gemini");
 
     private final Map<String, AiProviderService> providerServiceMap;
     private final UsageGuardrailService guardrailService;

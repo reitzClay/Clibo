@@ -91,7 +91,11 @@ public class OllamaAiService implements AiProviderService {
                 .map(output -> {
                     try {
                         guardrailService.incrementUserUsage(user, ModalityType.TEXT_MESSAGE);
-                        chatHistoryService.logChatInteraction(user, prompt, output, "Ollama Local");
+                        String dbPrompt = (request != null && request.getCleanPrompt() != null && !request.getCleanPrompt().isBlank())
+                                ? request.getCleanPrompt()
+                                : prompt;
+                        String sessId = (request != null) ? request.getSessionId() : null;
+                        chatHistoryService.logChatInteraction(user, dbPrompt, output, "Ollama Local", sessId);
                     } catch (Exception ex) {
                         logger.error("Failed to increment usage or log chat: {}", ex.getMessage());
                     }

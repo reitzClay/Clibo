@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 abstract class CliboAIClient {
   Future<String> generateResponse(
     String prompt, {
+    String? cleanPrompt,
+    String? sessionId,
     String? imageBase64,
     String? imageMimeType,
     String? audioBase64,
@@ -31,16 +33,29 @@ class BackendProxyAIClient implements CliboAIClient {
   @override
   Future<String> generateResponse(
     String prompt, {
+    String? cleanPrompt,
+    String? sessionId,
     String? imageBase64,
     String? imageMimeType,
     String? audioBase64,
     String? audioMimeType,
   }) async {
     final String? token = await _storage.read(key: _keyAuthToken);
-    final String providerId = await _storage.read(key: 'clibo_ai_provider') ?? 'ollama';
+    final String providerId = await _storage.read(key: 'clibo_ai_provider') ?? 'gemini';
     final String ollamaUrl = await _storage.read(key: 'clibo_ollama_url') ?? 'http://192.168.0.103:11434';
     final String ollamaModel = await _storage.read(key: 'clibo_ollama_model') ?? 'tinyllama:1.1b';
-    final String byokKey = await _storage.read(key: 'clibo_byok_key') ?? '';
+    
+    String activeKey = '';
+    if (providerId == 'gemini') {
+      activeKey = await _storage.read(key: 'clibo_gemini_key') ?? await _storage.read(key: 'clibo_byok_key') ?? '';
+    } else if (providerId == 'openai') {
+      activeKey = await _storage.read(key: 'clibo_openai_key') ?? '';
+    } else if (providerId == 'claude') {
+      activeKey = await _storage.read(key: 'clibo_claude_key') ?? '';
+    } else if (providerId == 'custom') {
+      activeKey = await _storage.read(key: 'clibo_custom_key') ?? '';
+    }
+
     final String customUrl = await _storage.read(key: 'clibo_custom_provider_url') ?? '';
     final String customModel = await _storage.read(key: 'clibo_custom_model') ?? '';
 
@@ -55,10 +70,12 @@ class BackendProxyAIClient implements CliboAIClient {
         })
         ..body = jsonEncode({
           'prompt': prompt,
+          'cleanPrompt': cleanPrompt ?? prompt,
+          if (sessionId != null) 'sessionId': sessionId,
           'aiProvider': providerId,
           'ollamaBaseUrl': ollamaUrl,
           'ollamaModel': ollamaModel,
-          'byokApiKey': byokKey,
+          'byokApiKey': activeKey,
           'customBaseUrl': customUrl,
           'customModel': customModel,
           if (imageBase64 != null) 'imageBase64': imageBase64,
@@ -274,6 +291,8 @@ class GeminiClient implements CliboAIClient {
   @override
   Future<String> generateResponse(
     String prompt, {
+    String? cleanPrompt,
+    String? sessionId,
     String? imageBase64,
     String? imageMimeType,
     String? audioBase64,
@@ -294,6 +313,8 @@ class OpenAiCompatibleClient implements CliboAIClient {
   @override
   Future<String> generateResponse(
     String prompt, {
+    String? cleanPrompt,
+    String? sessionId,
     String? imageBase64,
     String? imageMimeType,
     String? audioBase64,
