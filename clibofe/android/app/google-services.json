@@ -48,6 +48,42 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:277710406862:android:1ee59fd110def5f237bc9f",
+        "android_client_info": {
+          "package_name": "nl.claybytes.clibo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "277710406862-k1h0jcnngg5k64q5semb3pqvs295qe9v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDfLq7hbHZQuvd8RTPegBn1K0L2XyKTjXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "277710406862-k1h0jcnngg5k64q5semb3pqvs295qe9v.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "277710406862-ck491b22ld25k4jk2g4l9f3qtgn1knqa.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.clibofe"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"

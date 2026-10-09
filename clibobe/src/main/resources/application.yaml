@@ -10,8 +10,8 @@ spring:
   # Database Connection Details & Low-Memory Sized Hikari Pool
   datasource:
     url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/clibo_db?currentSchema=public}"
-    username: clibo_user
-    password: clibo_pass
+    username: "${SPRING_DATASOURCE_USERNAME:clibo_user}"
+    password: "${SPRING_DATASOURCE_PASSWORD:clibo_pass}"
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 15

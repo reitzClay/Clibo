@@ -46,13 +46,18 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "By signing in, you agree to our Terms of Service and Privacy Policy operated by ClayBytes (https://claybytes.nl/).",
+                "Clibo AI uses your Google profile name, email address, and profile picture for account registration and profile display.",
                 style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+              const Text(
+                "By continuing, you agree to our Terms of Service and Privacy Policy operated by ClayBytes (https://claybytes.nl/).",
+                style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.4),
+              ),
+              const SizedBox(height: 10),
               const Text(
                 "You acknowledge that chat interactions and usage metrics are securely logged for safety, auditing, and legal compliance.",
-                style: TextStyle(color: Colors.white54, fontSize: 12, height: 1.4),
+                style: TextStyle(color: Colors.white54, fontSize: 11, height: 1.4),
               ),
               const SizedBox(height: 16),
               Row(
