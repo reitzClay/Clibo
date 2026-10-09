@@ -1,4 +1,4 @@
-package com.example.clibofe
+package nl.claybytes.clibo
 
 import android.app.Activity
 import android.content.Context

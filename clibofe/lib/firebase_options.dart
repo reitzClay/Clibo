@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDfLq7hbHZQuvd8RTPegBn1K0L2XyKTjXg',
-    appId: '1:277710406862:android:bef8de1d9b68a24337bc9f',
+    appId: '1:277710406862:android:1ee59fd110def5f237bc9f',
     messagingSenderId: '277710406862',
     projectId: 'clibo-ai',
     storageBucket: 'clibo-ai.firebasestorage.app',
