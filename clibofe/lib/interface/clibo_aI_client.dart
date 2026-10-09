@@ -26,7 +26,7 @@ class BackendProxyAIClient implements CliboAIClient {
     FlutterSecureStorage? storage,
   }) : backendBaseUrl = backendBaseUrl ?? const String.fromEnvironment(
          'BACKEND_URL',
-         defaultValue: 'http://192.168.0.103:8080/api/v1',
+         defaultValue: 'https://clibobe-277710406862.europe-west4.run.app/api/v1',
        ),
        _storage = storage ?? const FlutterSecureStorage();
 

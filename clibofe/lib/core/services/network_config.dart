@@ -13,10 +13,7 @@ class NetworkConfig {
     const envUrl = String.fromEnvironment('BACKEND_URL', defaultValue: '');
     if (envUrl.isNotEmpty) return envUrl;
 
-    if (!kIsWeb && Platform.isAndroid) {
-      return 'http://10.0.2.2:8080/api/v1';
-    }
-    return 'http://localhost:8080/api/v1';
+    return 'https://clibobe-277710406862.europe-west4.run.app/api/v1';
   }
 
   /// Retrieves the effective Spring Boot backend base URL.
