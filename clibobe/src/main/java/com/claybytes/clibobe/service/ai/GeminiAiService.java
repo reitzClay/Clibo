@@ -87,13 +87,17 @@ public class GeminiAiService implements AiProviderService {
             }
 
             String output = null;
+            Exception lastException = null;
             String[] modelsToTry = new String[]{
+                "gemini-3.8-flash",
+                "gemini-3.6-flash",
+                "gemini-3.7-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3.5-flash",
                 "gemini-2.5-flash",
-                "gemini-2.0-flash",
-                "gemini-1.5-flash",
                 "gemini-2.5-flash-lite",
-                "gemini-2.0-flash-lite",
-                "gemini-1.5-flash-8b"
+                "gemini-2.0-flash",
+                "gemini-1.5-flash"
             };
 
             for (String modelName : modelsToTry) {
@@ -111,12 +115,15 @@ public class GeminiAiService implements AiProviderService {
                         break;
                     }
                 } catch (Exception modelEx) {
+                    lastException = modelEx;
                     logger.warn("Gemini model {} failed: {}", modelName, modelEx.getMessage());
                 }
             }
 
             if (output == null || output.isBlank()) {
-                throw new RuntimeException("Gemini generation failed. Please check your Gemini API key or image payload.");
+                String errorDetails = (lastException != null) ? lastException.getMessage() : "Unknown error";
+                logger.error("All Gemini models failed. Root error: {}", errorDetails, lastException);
+                throw new RuntimeException("Gemini generation failed: " + errorDetails);
             }
 
             try {
