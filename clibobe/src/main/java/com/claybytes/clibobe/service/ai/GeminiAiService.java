@@ -24,7 +24,7 @@ public class GeminiAiService implements AiProviderService {
 
     private static final Logger logger = LoggerFactory.getLogger(GeminiAiService.class);
 
-    private final String geminiApiKey = System.getenv().getOrDefault("GEMINI_API_KEY", "AQ.Ab8RN6JCZOQ7-U69Nk7cXw77dlOBPoQNXIud5r6xWPW31q5Hrg");
+    private final String geminiApiKey = System.getenv().getOrDefault("GEMINI_API_KEY", "");
 
     private final UsageGuardrailService guardrailService;
     private final ChatHistoryService chatHistoryService;
@@ -59,7 +59,6 @@ public class GeminiAiService implements AiProviderService {
             Client client = getClient(customKey);
 
             String userPrompt = (prompt != null && !prompt.isBlank()) ? prompt : "Describe in detail.";
-//            String systemPrefix = "[Sytem: You are Clibo AI Companion, a helpful and context-aware AI assistant powered by Google Gemini.]\n";
             String systemPrefix = "[System: You are Clibo AI Companion, a helpful and context-aware AI assistant powered by Google Gemini..]\n";
             String fullPrompt = systemPrefix + userPrompt;
 
@@ -89,12 +88,12 @@ public class GeminiAiService implements AiProviderService {
 
             String output = null;
             String[] modelsToTry = new String[]{
-                "gemini-3.5-flash-lite",
-                "gemini-3.8-flash",
-                "gemini-3.5-flash",
-                "gemini-3.6-flash",
-                "gemini-3.7-flash",
-                "gemini-flash-latest"
+                "gemini-2.5-flash",
+                "gemini-2.0-flash",
+                "gemini-1.5-flash",
+                "gemini-2.5-flash-lite",
+                "gemini-2.0-flash-lite",
+                "gemini-1.5-flash-8b"
             };
 
             for (String modelName : modelsToTry) {
