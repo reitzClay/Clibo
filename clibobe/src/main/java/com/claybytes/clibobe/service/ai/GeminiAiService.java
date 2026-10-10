@@ -117,6 +117,12 @@ public class GeminiAiService implements AiProviderService {
                 } catch (Exception modelEx) {
                     lastException = modelEx;
                     logger.warn("Gemini model {} failed: {}", modelName, modelEx.getMessage());
+
+                    String msg = (modelEx.getMessage() != null) ? modelEx.getMessage().toLowerCase() : "";
+                    if (msg.contains("api_key") || msg.contains("unauthenticated") || msg.contains("resource_exhausted") || msg.contains("401") || msg.contains("402") || msg.contains("403")) {
+                        logger.error("Fatal API Key/Billing error on model {}: {}", modelName, modelEx.getMessage());
+                        break;
+                    }
                 }
             }
 
