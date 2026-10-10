@@ -1,3 +1,6 @@
+server:
+  port: ${PORT:8080}
+
 spring:
   application:
     name: clibobe
@@ -15,9 +18,10 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 15
-      minimum-idle: 5
+      minimum-idle: 1
       idle-timeout: 30000
       max-lifetime: 1800000
+      initialization-fail-timeout: -1
 
   # JPA / Hibernate Configuration
   jpa:
