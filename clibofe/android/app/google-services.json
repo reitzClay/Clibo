@@ -58,6 +58,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "277710406862-jg60i9u8l07j4d6irkvof9s9ihu8ub4g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "nl.claybytes.clibo",
+            "certificate_hash": "a906a3c66eff9842ad32c3bc5412e5fe663ff7d7"
+          }
+        },
+        {
           "client_id": "277710406862-k1h0jcnngg5k64q5semb3pqvs295qe9v.apps.googleusercontent.com",
           "client_type": 3
         }

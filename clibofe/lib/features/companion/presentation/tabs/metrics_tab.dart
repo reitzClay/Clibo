@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'package:clibofe/app/service_locator.dart';
 import 'package:clibofe/data/services/config_service.dart';
@@ -164,6 +165,62 @@ class _MetricsTabState extends State<MetricsTab> {
             subtitle: isLocalOrByok
                 ? "Tracks total assistant messages processed across local & personal key sessions."
                 : "Resets daily at midnight UTC.",
+          ),
+          const SizedBox(height: 16),
+
+          // 4. Developer / Crashlytics Testing Card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.redAccent.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Colors.redAccent.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.bug_report_rounded, color: Colors.redAccent, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      "Crashlytics Onboarding Test",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Colors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "Tap below to force a test crash, then reopen the app to complete Firebase Crashlytics setup.",
+                  style: theme.textTheme.small.copyWith(
+                    color: Colors.white70,
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.flash_on_rounded, size: 18),
+                    label: const Text("Force Test Crash", style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      debugPrint("[Crashlytics] Forcing test crash...");
+                      FirebaseCrashlytics.instance.crash();
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
